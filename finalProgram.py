@@ -6,7 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QPushButton,
     QProgressBar, QTableWidget, QTableWidgetItem, QWidget,
-    QHBoxLayout, QHeaderView, QLineEdit, QComboBox
+    QHBoxLayout, QHeaderView, QLineEdit, QComboBox, QLabel
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import time
@@ -28,7 +28,7 @@ class ScraperThread(QThread):
         self.is_paused = False
         self.is_stopped = False
         self.product_count = 0
-        self.max_products = 100  # You can adjust this limit
+        self.max_products = 20  # You can adjust this limit
         self.csv_file_path = 'scraped_data1.csv'
         
         # Set up Selenium WebDriver
@@ -181,6 +181,10 @@ class MergedApp(QMainWindow):
         self.sorter_controls.addWidget(self.sortButton)
         self.layout.addLayout(self.sorter_controls)
 
+        # Sorting Time Label
+        self.sorting_time_label = QLabel("Sorting Time: 0.0 seconds")
+        self.layout.addWidget(self.sorting_time_label)
+
         # Table
         self.tableWidget = QTableWidget()
         self.tableWidget.setColumnCount(7) # add one more column for Discount
@@ -209,6 +213,9 @@ class MergedApp(QMainWindow):
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
             'Radix Sort', 'Counting Sort'
         ])
+
+      
+
 
     def start_scraping(self):
         self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
@@ -252,6 +259,7 @@ class MergedApp(QMainWindow):
         selected_algorithm = self.algorithmComboBox.currentText()
 
         if selected_algorithm and selected_column:
+            start_time = time.time()
             if selected_algorithm == 'Insertion Sort':
                 sorted_df = self.insertion_sort(self.df, selected_column)
             elif selected_algorithm == 'Selection Sort':
@@ -269,6 +277,10 @@ class MergedApp(QMainWindow):
             elif selected_algorithm == 'Counting Sort':
                 sorted_df = self.counting_sort(self.df, selected_column)
             
+
+            end_time = time.time()
+            sorting_time = end_time - start_time
+            self.sorting_time_label.setText(f"Sorting Time: {sorting_time:.2f} seconds")
             self.populate_table(sorted_df)
 
     def reset_data(self):
@@ -294,8 +306,10 @@ class MergedApp(QMainWindow):
             key = sorted_df[column].iloc[i]
             j = i - 1
             while j >= 0 and sorted_df[column].iloc[j] > key:
+                sorted_df.iloc[j + 1] = sorted_df.iloc[j]
                 j -= 1
-            sorted_df.loc[i] = sorted_df.loc[j + 1]
+            sorted_df.iloc[j + 1] = key
+            # sorted_df.loc[i] = sorted_df.loc[j + 1]
         return sorted_df
 
     def selection_sort(self, df, column):
@@ -308,13 +322,30 @@ class MergedApp(QMainWindow):
             sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
         return sorted_df
 
+    # def bubble_sort(self, df, column):
+    #     sorted_df = df.copy()
+    #     n = len(sorted_df)
+    #     for i in range(n):
+    #         isSwapped = False
+    #         for j in range(0, n-i-1):
+    #             if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
+    #                 sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+    #                 isSwapped = True
+    #         if not isSwapped:
+    #             break
+    #     return sorted_df
+
     def bubble_sort(self, df, column):
         sorted_df = df.copy()
         n = len(sorted_df)
-        for i in range(n):
-            for j in range(0, n-i-1):
-                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
-                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+        for i in range(1,n):
+            isSwapped = False
+            for j in range(0,n-i):
+                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j+1]:
+                    sorted_df.iloc[j], sorted_df.iloc[j+1] = sorted_df.iloc[j+1], sorted_df.iloc[j]
+                    isSwapped = True
+            if not isSwapped:
+                break
         return sorted_df
 
     def quick_sort(self, df, column):
@@ -344,10 +375,10 @@ class MergedApp(QMainWindow):
         # Merge the two halves while there are elements in both
         while i < len(left) and j < len(right):
             if left[column].iloc[i] <= right[column].iloc[j]:
-                result = pd.concat([result, left.iloc[[i]]])
+                result = pd.concat([result, left.iloc[[i]]],ignore_index=True)
                 i += 1
             else:
-                result = pd.concat([result, right.iloc[[j]]])
+                result = pd.concat([result, right.iloc[[j]]],ignore_index=True)
                 j += 1
         
         # If there are remaining elements in the left half, add them
@@ -411,22 +442,48 @@ class MergedApp(QMainWindow):
             sorted_df.iloc[i] = output[i]
         return sorted_df
 
+    # def counting_sort(self, df, column):
+    #     # Implement Counting Sort
+    #     sorted_df = df.copy()
+    #     max_val = sorted_df[column].max()
+    #     count = [0] * (max_val + 1)
+
+    #     for value in sorted_df[column]:
+    #         count[value] += 1
+
+    #     index = 0
+    #     for i in range(max_val + 1):
+    #         while count[i] > 0:
+    #             sorted_df.iloc[index] = i
+    #             index += 1
+    #             count[i] -= 1
+    #     return sorted_df
+
     def counting_sort(self, df, column):
-        # Implement Counting Sort
-        sorted_df = df.copy()
-        max_val = sorted_df[column].max()
-        count = [0] * (max_val + 1)
+        column_dtype = df[column].dtype
 
-        for value in sorted_df[column]:
-            count[value] += 1
+        if pd.api.types.is_numeric_dtype(column_dtype):
+            sorted_df = df.copy()
+            max_val = sorted_df[column].max()
+            count = [0] * (max_val + 1)
+            for value in sorted_df[column]:
+                count[value] += 1
 
-        index = 0
-        for i in range(max_val + 1):
-            while count[i] > 0:
-                sorted_df.iloc[index] = i
-                index += 1
-                count[i] -= 1
-        return sorted_df
+            index = 0
+            for i in range(max_val + 1):
+                while count[i] > 0:
+                    sorted_df.iloc[index] = i
+                    index += 1
+                    count[i] -= 1
+            return sorted_df
+
+        elif pd.api.types.is_string_dtype(column_dtype):
+            sorted_df=df.copy()
+            sorted_df=sorted_df.sort_values(by=column).reset_index(drop=True)
+            return sorted_df
+
+        else:
+            return df
 
 
 def main():
