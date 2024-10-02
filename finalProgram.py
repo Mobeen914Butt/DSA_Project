@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options # for page load strategy
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -32,6 +33,8 @@ class ScraperThread(QThread):
         # Set up Selenium WebDriver
         service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
         options = webdriver.ChromeOptions()
+        options.page_load_strategy = 'eager' 
+        #The WebDriver waits until the DOM content is fully loaded (i.e., the DOMContentLoaded event is fired), but it doesn't wait for other resources like images, stylesheets, and frames to load.
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
