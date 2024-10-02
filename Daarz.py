@@ -2,8 +2,8 @@ import sys
 import os
 import pandas as pd
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QPushButton, 
-    QProgressBar, QTableWidget, QTableWidgetItem, QWidget, 
+    QApplication, QMainWindow, QVBoxLayout, QPushButton,
+    QProgressBar, QTableWidget, QTableWidgetItem, QWidget,
     QHBoxLayout, QHeaderView
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
@@ -27,7 +27,8 @@ class ScraperThread(QThread):
         self.product_count = 0
         self.max_products = 100  # You can adjust this limit
         self.csv_file_path = 'scraped_data.csv'
-
+        
+        # Set up Selenium WebDriver
         service = Service(executable_path="C:/Users/Sher/Downloads/chromedriver-win64 (1)/chromedriver-win64/chromedriver.exe")
         options = webdriver.ChromeOptions()
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -57,7 +58,7 @@ class ScraperThread(QThread):
                     if self.product_count >= self.max_products or self.is_stopped:
                         break
 
-                    while self.is_paused:
+                    while self.is_paused:  # Check if paused
                         time.sleep(0.1)
 
                     try:
@@ -85,13 +86,17 @@ class ScraperThread(QThread):
         df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating"])
         df.to_csv(self.csv_file_path, mode='a', header=not os.path.exists(self.csv_file_path), index=False)
 
-    def load_data_from_csv(self):
-        if os.path.exists(self.csv_file_path):
-            data = pd.read_csv(self.csv_file_path)
-            for index, row in data.iterrows():
-                product_data = row.tolist()
-                self.data_updated.emit(product_data)
-                self.product_count += 1
+
+    def pause(self):
+        self.is_paused = True  # Set paused to True
+
+    def resume(self):
+        self.is_paused = False  # Set paused to False
+
+    def stop(self):
+        self.is_stopped = True  # Set stopped to True
+        self.resume()  # Ensure thread can exit if paused
+        self.driver.quit()  # Quit the driver
 
 
 class ScraperApp(QMainWindow):
@@ -119,13 +124,11 @@ class ScraperApp(QMainWindow):
         self.pause_button = QPushButton("Pause", self)
         self.resume_button = QPushButton("Resume", self)
         self.stop_button = QPushButton("Stop", self)
-        self.load_button = QPushButton("Load Data", self)  # New Load Data button
 
         self.button_layout.addWidget(self.start_button)
         self.button_layout.addWidget(self.pause_button)
         self.button_layout.addWidget(self.resume_button)
         self.button_layout.addWidget(self.stop_button)
-        self.button_layout.addWidget(self.load_button)  # Add Load Data button to layout
 
         self.layout.addLayout(self.button_layout)
 
@@ -133,11 +136,13 @@ class ScraperApp(QMainWindow):
         self.pause_button.clicked.connect(self.pause_scraping)
         self.resume_button.clicked.connect(self.resume_scraping)
         self.stop_button.clicked.connect(self.stop_scraping)
-        self.load_button.clicked.connect(self.load_data)  # Connect Load Data button
 
         self.scraper_thread = ScraperThread()
         self.scraper_thread.progress_updated.connect(self.update_progress)
         self.scraper_thread.data_updated.connect(self.update_table)
+
+        # Ensure the thread is stopped when the application closes
+        self.destroyed.connect(self.stop_scraping)
 
     def start_scraping(self):
         self.scraper_thread.is_stopped = False
@@ -151,9 +156,9 @@ class ScraperApp(QMainWindow):
 
     def stop_scraping(self):
         self.scraper_thread.stop()
+        self.scraper_thread.quit()  # Quit the thread safely
 
-    def load_data(self):
-        self.scraper_thread.load_data_from_csv()  # Load data from CSV file
+   
 
     def update_progress(self, value):
         self.progress_bar.setValue(value)
