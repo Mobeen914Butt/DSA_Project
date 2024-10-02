@@ -1,5 +1,6 @@
 import sys
 import os
+# print("Current working directory: ", os.getcwd())
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import (
@@ -28,17 +29,19 @@ class ScraperThread(QThread):
         self.is_stopped = False
         self.product_count = 0
         self.max_products = 100  # You can adjust this limit
-        self.csv_file_path = 'scraped_data.csv'
+        self.csv_file_path = 'scraped_data1.csv'
         
         # Set up Selenium WebDriver
         service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
         options = webdriver.ChromeOptions()
+        # options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3')  # if daraz blocks the default user agent
+
         options.page_load_strategy = 'eager' 
         #The WebDriver waits until the DOM content is fully loaded (i.e., the DOMContentLoaded event is fired), but it doesn't wait for other resources like images, stylesheets, and frames to load.
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
-        queries = ['nails', 'nail polish']
+        queries = ['car', 'nail polish']
         for query in queries:
             for page in range(1, 100):  # Adjust page limit as needed
                 if self.product_count >= self.max_products or self.is_stopped:
@@ -111,9 +114,15 @@ class ScraperThread(QThread):
 
         self.scraping_finished.emit()
 
+    
+    
+    # def save_to_csv(self, product_data):
+    #     df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating"])
+    #     df.to_csv(self.csv_file_path, mode='a', header=not os.path.exists(self.csv_file_path), index=False)
     def save_to_csv(self, product_data):
-        df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
+        df =pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating","Discount","Rating_Count"]) # Add Discount and Rating Count
         df.to_csv(self.csv_file_path, mode='a', header=not os.path.exists(self.csv_file_path), index=False)
+
 
     def pause(self):
         self.is_paused = True
