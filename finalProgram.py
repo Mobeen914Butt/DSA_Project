@@ -65,20 +65,47 @@ class ScraperThread(QThread):
                     while self.is_paused:  # Check if paused
                         time.sleep(0.1)
 
+                  
                     try:
-                        price = data.find('span', attrs={'class': 'ooOxS'}).text.strip()
-                        name = data.find('div', attrs={'class': 'RfADt'}).find('a').text.strip()
-                        sold = data.find('div', attrs={'class': '_6uN7R'}).find('span').text.strip()
-                        location = data.find('span', attrs={'class': 'oa6ri'}).text.strip()
-                        rate = data.find('span', attrs={'class': 'qzqFw'})
-                        rate = rate.text.strip().strip('()') if rate else 'N/A'
-                        discount =data.find('div',class_='WNoq3').find('span').text.strip()  #Add discount
-                        discount = discount if discount else 'N/A'  
+        # Check if the price element exists
+                        price_elem = data.find('span', attrs={'class': 'ooOxS'})
+                        price = price_elem.text.strip() if price_elem else 'N/A'
 
-                        product_data = [name, price, sold, location, rate,discount]
+        # Check if the name element exists
+                        name_elem = data.find('div', attrs={'class': 'RfADt'}).find('a')
+                        name = name_elem.text.strip() if name_elem else 'N/A'
+
+        # Check if the sold element exists
+                        sold_elem = data.find('div', attrs={'class': '_6uN7R'}).find('span')
+                        sold = sold_elem.text.strip() if sold_elem else 'N/A'
+
+        # Check if the location element exists
+                        location_elem = data.find('span', attrs={'class': 'oa6ri'})
+                        location = location_elem.text.strip() if location_elem else 'N/A'
+
+        # Check if the rate element exists
+                        rate_elem = data.find('span', attrs={'class': 'qzqFw'})
+                        rate = rate_elem.text.strip().strip('()') if rate_elem else 'N/A'
+
+        # Check if the discount element exists
+                        discount_elem = data.find('div', class_='WNoq3')
+                        discount = discount_elem.find('span').text.strip() if discount_elem and discount_elem.find('span') else 'N/A'
+
+        # Check if the rating element exists
+                        rating_elems = data.find('div', attrs={'class': 'mdmmT _32vUv'})
+                        if rating_elems:
+                            rating_count = rating_elems.find('span',class_='qzqFw')
+                            if rating_count:
+                                rating_count = rating_count.text.strip('()')
+                            else:
+                                rating_count = 'N/A'
+                        else:
+                            rating_count = 'N/A'
+
+
+                        product_data = [name, price, sold, location, rate, discount, rating_count]
                         self.data_updated.emit(product_data)
                         self.save_to_csv(product_data)
-
                         self.product_count += 1
                         progress_value = (self.product_count * 100) // self.max_products
                         self.progress_updated.emit(progress_value)
@@ -91,7 +118,7 @@ class ScraperThread(QThread):
         self.scraping_finished.emit()
 
     def save_to_csv(self, product_data):
-        df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount 
+        df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
         df.to_csv(self.csv_file_path, mode='a', header=not os.path.exists(self.csv_file_path), index=False)
 
     def pause(self):
@@ -109,7 +136,7 @@ class MergedApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating","Discount"]) # Add Discount
+        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating","Discount","Rating_Count"]) # Add Discount and Rating Count
 
     def setupUi(self):
         self.setWindowTitle("Web Scraper and Data Sorter")
@@ -153,8 +180,8 @@ class MergedApp(QMainWindow):
 
         # Table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(6) # add one more column for Discount
-        self.tableWidget.setHorizontalHeaderLabels(["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
+        self.tableWidget.setColumnCount(7) # add one more column for Discount
+        self.tableWidget.setHorizontalHeaderLabels(["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.tableWidget)
 
@@ -173,7 +200,7 @@ class MergedApp(QMainWindow):
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
 
         # Set column headers in combo boxes
-        self.columnComboBox.addItems(["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
+        self.columnComboBox.addItems(["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
         self.algorithmComboBox.addItems([
             'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
@@ -181,7 +208,7 @@ class MergedApp(QMainWindow):
         ])
 
     def start_scraping(self):
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
+        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
         self.tableWidget.setRowCount(0)
         self.scraper_thread.is_stopped = False
         self.scraper_thread.start()
