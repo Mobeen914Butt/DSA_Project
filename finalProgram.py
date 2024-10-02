@@ -30,7 +30,7 @@ class ScraperThread(QThread):
         self.csv_file_path = 'scraped_data.csv'
         
         # Set up Selenium WebDriver
-        service = Service(executable_path="C:/Users/Sher/Downloads/chromedriver-win64 (1)/chromedriver-win64/chromedriver.exe")
+        service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
         options = webdriver.ChromeOptions()
         self.driver = webdriver.Chrome(service=service, options=options)
 
@@ -53,9 +53,9 @@ class ScraperThread(QThread):
 
                 content = self.driver.page_source
                 soup = BeautifulSoup(content, "html.parser")
-                mobiles = soup.find_all('div', attrs={'class': 'buTCk'})
+                datas = soup.find_all('div', attrs={'class': 'buTCk'})
 
-                for mobile in mobiles:
+                for data in datas:
                     if self.product_count >= self.max_products or self.is_stopped:
                         break
 
@@ -63,14 +63,16 @@ class ScraperThread(QThread):
                         time.sleep(0.1)
 
                     try:
-                        price = mobile.find('span', attrs={'class': 'ooOxS'}).text.strip()
-                        name = mobile.find('div', attrs={'class': 'RfADt'}).find('a').text.strip()
-                        sold = mobile.find('div', attrs={'class': '_6uN7R'}).find('span').text.strip()
-                        location = mobile.find('span', attrs={'class': 'oa6ri'}).text.strip()
-                        rate = mobile.find('span', attrs={'class': 'qzqFw'})
+                        price = data.find('span', attrs={'class': 'ooOxS'}).text.strip()
+                        name = data.find('div', attrs={'class': 'RfADt'}).find('a').text.strip()
+                        sold = data.find('div', attrs={'class': '_6uN7R'}).find('span').text.strip()
+                        location = data.find('span', attrs={'class': 'oa6ri'}).text.strip()
+                        rate = data.find('span', attrs={'class': 'qzqFw'})
                         rate = rate.text.strip().strip('()') if rate else 'N/A'
+                        discount =data.find('div',class_='WNoq3').find('span').text.strip()  #Add discount
+                        discount = discount if discount else 'N/A'  
 
-                        product_data = [name, price, sold, location, rate]
+                        product_data = [name, price, sold, location, rate,discount]
                         self.data_updated.emit(product_data)
                         self.save_to_csv(product_data)
 
@@ -86,7 +88,7 @@ class ScraperThread(QThread):
         self.scraping_finished.emit()
 
     def save_to_csv(self, product_data):
-        df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating"])
+        df = pd.DataFrame([product_data], columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount 
         df.to_csv(self.csv_file_path, mode='a', header=not os.path.exists(self.csv_file_path), index=False)
 
     def pause(self):
@@ -104,7 +106,7 @@ class MergedApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating"])
+        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating","Discount"]) # Add Discount
 
     def setupUi(self):
         self.setWindowTitle("Web Scraper and Data Sorter")
@@ -148,8 +150,8 @@ class MergedApp(QMainWindow):
 
         # Table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(5)
-        self.tableWidget.setHorizontalHeaderLabels(["Product Name", "Price", "Sold", "Location", "Rating"])
+        self.tableWidget.setColumnCount(6) # add one more column for Discount
+        self.tableWidget.setHorizontalHeaderLabels(["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.tableWidget)
 
@@ -168,7 +170,7 @@ class MergedApp(QMainWindow):
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
 
         # Set column headers in combo boxes
-        self.columnComboBox.addItems(["Product Name", "Price", "Sold", "Location", "Rating"])
+        self.columnComboBox.addItems(["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
         self.algorithmComboBox.addItems([
             'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
@@ -176,7 +178,7 @@ class MergedApp(QMainWindow):
         ])
 
     def start_scraping(self):
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating"])
+        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount"]) # Add Discount
         self.tableWidget.setRowCount(0)
         self.scraper_thread.is_stopped = False
         self.scraper_thread.start()
