@@ -40,7 +40,7 @@ class ScraperThread(QThread):
     def run(self):
         queries = ['nails', 'nail polish']
         for query in queries:
-            for page in range(1, 10):  # Adjust page limit as needed
+            for page in range(1, 100):  # Adjust page limit as needed
                 if self.product_count >= self.max_products or self.is_stopped:
                     break
 
@@ -67,31 +67,25 @@ class ScraperThread(QThread):
 
                   
                     try:
-        # Check if the price element exists
+        
                         price_elem = data.find('span', attrs={'class': 'ooOxS'})
                         price = price_elem.text.strip() if price_elem else 'N/A'
 
-        # Check if the name element exists
                         name_elem = data.find('div', attrs={'class': 'RfADt'}).find('a')
                         name = name_elem.text.strip() if name_elem else 'N/A'
 
-        # Check if the sold element exists
                         sold_elem = data.find('div', attrs={'class': '_6uN7R'}).find('span')
                         sold = sold_elem.text.strip() if sold_elem else 'N/A'
 
-        # Check if the location element exists
                         location_elem = data.find('span', attrs={'class': 'oa6ri'})
                         location = location_elem.text.strip() if location_elem else 'N/A'
 
-        # Check if the rate element exists
                         rate_elem = data.find('span', attrs={'class': 'qzqFw'})
                         rate = rate_elem.text.strip().strip('()') if rate_elem else 'N/A'
 
-        # Check if the discount element exists
                         discount_elem = data.find('div', class_='WNoq3')
                         discount = discount_elem.find('span').text.strip() if discount_elem and discount_elem.find('span') else 'N/A'
 
-        # Check if the rating element exists
                         rating_elems = data.find('div', attrs={'class': 'mdmmT _32vUv'})
                         if rating_elems:
                             rating_count = rating_elems.find('span',class_='qzqFw')
