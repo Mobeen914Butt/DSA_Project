@@ -16,6 +16,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 
 
+# Checking
+
 class ScraperThread(QThread):
     progress_updated = pyqtSignal(int)
     data_updated = pyqtSignal(list)
