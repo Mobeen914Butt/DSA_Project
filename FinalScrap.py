@@ -40,22 +40,22 @@ class ScraperThread(QThread):
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--ignore-ssl-errors')
         # # make code that takes less amount of internet
-        # options.add_argument('--no-sandbox')
-        # options.add_argument('--disable-dev-shm-usage')
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--disable-extensions')
-        # options.add_argument('--disable-software-rasterizer')
-        # options.add_argument('--disable-dev-shm-usage')
-        # options.add_argument('--disable-browser-side-navigation')
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--disable-infobars')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-infobars')
         options.add_argument('--disable-notifications')
-        # options.add_argument('--disable-offer-store-unmasked-wallet-cards')
-        # options.add_argument('--disable-offer-upload-credit-cards')
-        # options.add_argument('--disable-popup-blocking')
-        # options.add_argument('--disable-print-preview')
-        # options.add_argument('--disable-prompt-on-repost')
-        # options.add_argument('--disable-extensions') 
+        options.add_argument('--disable-offer-store-unmasked-wallet-cards')
+        options.add_argument('--disable-offer-upload-credit-cards')
+        options.add_argument('--disable-popup-blocking')
+        options.add_argument('--disable-print-preview')
+        options.add_argument('--disable-prompt-on-repost')
+        options.add_argument('--disable-extensions') 
 
 
         # INcreasing load speed of web page
@@ -64,57 +64,8 @@ class ScraperThread(QThread):
         # options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome(service=service, options=options)
 
-    # def run(self):
-    #     while not self.is_stopped:
-    #         if self.is_paused:
-    #             time.sleep(1)
-    #             continue
-    #     start_page = 550
-    #     for page_number in range(start_page, 1500):  # Adjust page limit as needed
-    #         if self.product_count >= self.max_products or self.is_stopped:
-    #             break
-            
-    #         url = f"https://www.pakwheels.com/used-cars/family-cars/587667?page={page_number}"
-    #         self.driver.get(url)
-    #         # print(f"Scraping page {page_number}: {url}")
-
-    #         # Use explicit wait to ensure the car cards are present
-    #         try:
-    #             WebDriverWait(self.driver, 3).until(
-    #                 EC.presence_of_element_located((By.CLASS_NAME, 'search-title-row'))
-    #             )
-    #         except Exception as e:
-    #             print(f"Error loading page: {e}")
-    #             continue  
-            
-    #         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-
-    #         # Extract car data
-    #         car_data_list = self.extract_car_data(soup)
-
-    #         # Process each car's data
-    #         for car_data in car_data_list:
-    #             if self.product_count >= self.max_products or self.is_stopped:
-    #                 break
-
-    #             # Emit the car data
-    #             self.data_updated.emit(car_data)  # Emit car data as a dictionary
-
-    #             # Save the data to CSV
-    #             self.save_to_csv(car_data)
-    #             self.product_count += 1
-
-    #             # Update the progress
-    #             progress_value = (self.product_count * 100) // self.max_products
-    #             self.progress_updated.emit(progress_value)
-
-    #             # Sleep for a moment to avoid overwhelming the server
-    #             time.sleep(0.01)
-
-    #     self.scraping_finished.emit()  # Emit finished signal
-    #     self.driver.quit()  # Close the WebDriver
     def run(self):
-        start_page = 600
+        start_page = 250
         for page_number in range(start_page, 1500):  # Adjust page limit as needed
             while self.is_paused:  # Check if paused
                 time.sleep(0.1)  # Sleep briefly while paused
@@ -156,7 +107,7 @@ class ScraperThread(QThread):
                 self.progress_updated.emit(progress_value)
 
             # Sleep for a moment to avoid overwhelming the server
-                time.sleep(0.01)
+                # time.sleep(0.1)
 
         self.scraping_finished.emit()  # Emit finished signal
         self.driver.quit()  # Close the WebDriver
@@ -316,7 +267,9 @@ class MergedApp(QMainWindow):
         self.algorithmComboBox.addItems([
             'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
-            'Radix Sort', 'Counting Sort'
+            'Radix Sort', 'Counting Sort', 'Shell Sort',
+            'Pigeonhole Sort', 'Comb Sort'
+
         ])
 
         
@@ -388,6 +341,13 @@ class MergedApp(QMainWindow):
                 sorted_df = self.radix_sort(self.df, selected_column)
             elif selected_algorithm == 'Counting Sort':
                 sorted_df = self.counting_sort(self.df, selected_column)
+            elif selected_algorithm == 'Shell Sort':
+                sorted_df = self.shell_sort(self.df, selected_column)
+            elif selected_algorithm == 'Pigeonhole Sort':
+                sorted_df = self.pigeonhole_sort(self.df, selected_column)
+            elif selected_algorithm == 'Comb Sort':
+                sorted_df = self.comb_sort(self.df, selected_column)
+
             
 
             end_time = time.time()
@@ -412,27 +372,77 @@ class MergedApp(QMainWindow):
 
     # Sorting algorithms (insertion_sort, selection_sort, etc.) remain the same
 
-    def insertion_sort(self, df, column):
-        sorted_df = df.copy()
-        for i in range(1, len(sorted_df)):
-            key = sorted_df[column].iloc[i]
-            j = i - 1
-            while j >= 0 and sorted_df[column].iloc[j] > key:
-                sorted_df.iloc[j + 1] = sorted_df.iloc[j]
-                j -= 1
-            sorted_df.iloc[j + 1] = key
-            # sorted_df.loc[i] = sorted_df.loc[j + 1]
-        return sorted_df
+    # def insertion_sort(self, df, column):
+    #     sorted_df = df.copy()
+    #     for i in range(1, len(sorted_df)):
+    #         key = sorted_df.iloc[i]
+    #         j = i - 1
+    #         while j >= 0 and key[column] < sorted_df.iloc[j][column]:
+    #             sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+    #             j -= 1
+    #         sorted_df.iloc[j + 1] = key
+    #     return sorted_df
+def insertion_sort(self, df, column):
+    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+    for i in range(1, len(sorted_df)):
+        key = sorted_df.iloc[i]
+        j = i - 1
 
-    def selection_sort(self, df, column):
-        sorted_df = df.copy()
-        for i in range(len(sorted_df)):
-            min_idx = i
-            for j in range(i + 1, len(sorted_df)):
+        # Compare key with the previous elements
+        while j >= 0:
+            # Ensure comparison is valid (both should be of the same type)
+            if isinstance(key[column], str) and isinstance(sorted_df.iloc[j][column], str):
+                if key[column] < sorted_df.iloc[j][column]:
+                    sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+                else:
+                    break  # Stop if the order is correct
+            elif isinstance(key[column], (int, float)) and isinstance(sorted_df.iloc[j][column], (int, float)):
+                if key[column] < sorted_df.iloc[j][column]:
+                    sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+                else:
+                    break  # Stop if the order is correct
+            else:
+                # If types are mixed, we can define a strategy (e.g., place strings after numbers)
+                if isinstance(key[column], str):
+                    break  # Stop since we consider strings after numbers
+            j -= 1
+
+        sorted_df.iloc[j + 1] = key  # Place the key in the correct position
+    return sorted_df
+
+
+
+    # def selection_sort(self, df, column):
+    #     sorted_df = df.copy()
+    #     for i in range(len(sorted_df)):
+    #         min_idx = i
+    #         for j in range(i + 1, len(sorted_df)):
+    #             if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
+    #                 min_idx = j
+    #         sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
+    #     return sorted_df
+def selection_sort(self, df, column):
+    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+    for i in range(len(sorted_df)):
+        min_idx = i
+        for j in range(i + 1, len(sorted_df)):
+            # Ensure valid comparisons based on types
+            if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[min_idx], str):
                 if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
                     min_idx = j
-            sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
-        return sorted_df
+            elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[min_idx], (int, float)):
+                if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
+                    min_idx = j
+            elif isinstance(sorted_df[column].iloc[j], str):
+                # If min_idx is a number, and j is a string, keep min_idx
+                continue  # Strings are treated as larger than numbers
+            elif isinstance(sorted_df[column].iloc[min_idx], str):
+                min_idx = j  # If the current min_idx is a string, replace it with a number if found
+
+        # Swap the found minimum element with the first element
+        sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
+
+    return sorted_df
 
     # def bubble_sort(self, df, column):
     #     sorted_df = df.copy()
@@ -447,29 +457,71 @@ class MergedApp(QMainWindow):
     #             break
     #     return sorted_df
 
-    def bubble_sort(self, df, column):
-        sorted_df = df.copy()
-        n = len(sorted_df)
-        for i in range(1,n):
-            isSwapped = False
-            for j in range(0,n-i):
-                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j+1]:
-                    sorted_df.iloc[j], sorted_df.iloc[j+1] = sorted_df.iloc[j+1], sorted_df.iloc[j]
-                    isSwapped = True
-            if not isSwapped:
-                break
-        return sorted_df
+    # def bubble_sort(self, df, column):
+    #     sorted_df = df.copy()
+    #     n = len(sorted_df)
+    #     for i in range(1,n):
+    #         isSwapped = False
+    #         for j in range(0,n-i):
+    #             if sorted_df[column].iloc[j] > sorted_df[column].iloc[j+1]:
+    #                 sorted_df.iloc[j], sorted_df.iloc[j+1] = sorted_df.iloc[j+1], sorted_df.iloc[j]
+    #                 isSwapped = True
+    #         if not isSwapped:
+    #             break
+    #     return sorted_df
+def bubble_sort(self, df, column):
+    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+    n = len(sorted_df)
 
-    def quick_sort(self, df, column):
-        # Implement Quick Sort
-        sorted_df = df.copy()
-        if len(sorted_df) <= 1:
-            return sorted_df
-        pivot = sorted_df[column].iloc[len(sorted_df) // 2]
-        left = sorted_df[sorted_df[column] < pivot]
-        middle = sorted_df[sorted_df[column] == pivot]
-        right = sorted_df[sorted_df[column] > pivot]
-        return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
+    for i in range(n):
+        isSwapped = False
+        for j in range(n - 1 - i):  # Reduce range as the largest elements bubble to the end
+            # Ensure valid comparisons based on types
+            if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[j + 1], str):
+                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
+                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                    isSwapped = True
+            elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[j + 1], (int, float)):
+                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
+                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                    isSwapped = True
+            elif isinstance(sorted_df[column].iloc[j], str):
+                # If j+1 is a number, keep j
+                continue  # Strings are treated as larger than numbers
+            elif isinstance(sorted_df[column].iloc[j + 1], str):
+                # If j is a number and j+1 is a string, swap j with j+1
+                sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                isSwapped = True
+
+        if not isSwapped:
+            break  # No swaps mean the array is sorted
+
+    return sorted_df
+
+    # def quick_sort(self, df, column):
+    #     # Implement Quick Sort
+    #     sorted_df = df.copy()
+    #     if len(sorted_df) <= 1:
+    #         return sorted_df
+    #     pivot = sorted_df[column].iloc[len(sorted_df) // 2]
+    #     left = sorted_df[sorted_df[column] < pivot]
+    #     middle = sorted_df[sorted_df[column] == pivot]
+    #     right = sorted_df[sorted_df[column] > pivot]
+    #     return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
+def quick_sort(self, df, column):
+    sorted_df = df.copy()
+    if len(sorted_df) <= 1:
+        return sorted_df
+    
+    # Choose pivot
+    pivot = sorted_df[column].iloc[len(sorted_df) // 2]
+
+    # Create left, middle, right DataFrames based on the pivot
+    left = sorted_df[sorted_df[column] < pivot]
+    middle = sorted_df[sorted_df[column] == pivot]
+    right = sorted_df[sorted_df[column] > pivot]
+
+    return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
 
     def merge_sort(self, df, column):
         # Implement Merge Sort
@@ -482,7 +534,7 @@ class MergedApp(QMainWindow):
         return self.merge(left_half, right_half, column)
 
     def merge(self, left, right, column):
-        result = pd.DataFrame(columns=left.columns)
+        result = pd.DatasFrame(columns=left.columns)
         i = j = 0
         # Merge the two halves while there are elements in both
         while i < len(left) and j < len(right):
@@ -596,6 +648,72 @@ class MergedApp(QMainWindow):
 
         else:
             return df
+def shell_sort(self, df, column):
+    sorted_df = df.copy()
+    n = len(sorted_df)
+    gap = n // 2  # Initialize gap size
+
+    while gap > 0:
+        for i in range(gap, n):
+            temp = sorted_df.iloc[i]
+            j = i
+            
+            # Shift earlier gap-sorted elements up until the correct location for temp is found
+            while j >= gap and sorted_df[column].iloc[j - gap] > temp[column]:
+                sorted_df.iloc[j] = sorted_df.iloc[j - gap]
+                j -= gap
+            
+            sorted_df.iloc[j] = temp
+        gap //= 2
+    return sorted_df
+
+def pigeonhole_sort(self, df, column):
+    sorted_df = df.copy()
+    
+    # Step 1: Find the range of the values
+    min_value = sorted_df[column].min()
+    max_value = sorted_df[column].max()
+    
+    # Step 2: Create pigeonholes
+    size = max_value - min_value + 1
+    holes = [[] for _ in range(size)]
+
+    # Step 3: Place each element in its corresponding pigeonhole
+    for value in sorted_df[column]:
+        holes[value - min_value].append(value)
+
+    # Step 4: Flatten the holes into the sorted order
+    sorted_index = 0
+    for hole in holes:
+        for value in hole:
+            sorted_df.iloc[sorted_index] = value
+            sorted_index += 1
+    
+    return sorted_df
+
+def comb_sort(self, df, column):
+    sorted_df = df.copy()
+    n = len(sorted_df)
+    gap = n
+    shrink = 1.3  # Shrink factor
+    sorted = False
+
+    while not sorted:
+        # Update the gap value for this iteration
+        gap = int(gap / shrink)
+        if gap < 1:
+            gap = 1
+        sorted = True
+
+        # Compare elements that are 'gap' apart
+        for i in range(n - gap):
+            if sorted_df[column].iloc[i] > sorted_df[column].iloc[i + gap]:
+                # Swap if the elements are out of order
+                sorted_df.iloc[i], sorted_df.iloc[i + gap] = sorted_df.iloc[i + gap], sorted_df.iloc[i]
+                sorted = False
+
+    return sorted_df
+
 
 
 def main():
