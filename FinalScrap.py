@@ -34,21 +34,49 @@ class ScraperThread(QThread):
         # Set up Selenium WebDriver
         service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
         options = webdriver.ChromeOptions()
+        # # options.add_argument('--headless')  # Run the browser in the background
+        # options.add_argument('--enable-gpu')
         options.page_load_strategy = 'eager' 
+        # options.add_argument('--ignore-certificate-errors')
+        # options.add_argument('--ignore-ssl-errors')
+        # # make code that takes less amount of internet
+        # options.add_argument('--no-sandbox')
+        # options.add_argument('--disable-dev-shm-usage')
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--disable-extensions')
+        # options.add_argument('--disable-software-rasterizer')
+        # options.add_argument('--disable-dev-shm-usage')
+        # options.add_argument('--disable-browser-side-navigation')
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--disable-infobars')
+        # options.add_argument('--disable-notifications')
+        # options.add_argument('--disable-offer-store-unmasked-wallet-cards')
+        # options.add_argument('--disable-offer-upload-credit-cards')
+        # options.add_argument('--disable-popup-blocking')
+        # options.add_argument('--disable-print-preview')
+        # options.add_argument('--disable-prompt-on-repost')
+        # options.add_argument('--disable-extensions') 
+
+
+        # INcreasing load speed of web page
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--no-sandbox')
+        # options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
-        for page_number in range(1, 1500):  # Adjust page limit as needed
+        start_page = 350
+        for page_number in range(start_page, 1500):  # Adjust page limit as needed
             if self.product_count >= self.max_products or self.is_stopped:
                 break
             
             url = f"https://www.pakwheels.com/used-cars/family-cars/587667?page={page_number}"
             self.driver.get(url)
-            print(f"Scraping page {page_number}: {url}")
+            # print(f"Scraping page {page_number}: {url}")
 
             # Use explicit wait to ensure the car cards are present
             try:
-                WebDriverWait(self.driver, 10).until(
+                WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'search-title-row'))
                 )
             except Exception as e:
@@ -77,7 +105,7 @@ class ScraperThread(QThread):
                 self.progress_updated.emit(progress_value)
 
                 # Sleep for a moment to avoid overwhelming the server
-                time.sleep(0.01)
+                # time.sleep(0.01)
 
         self.scraping_finished.emit()  # Emit finished signal
         self.driver.quit()  # Close the WebDriver
@@ -137,7 +165,7 @@ class ScraperThread(QThread):
                     'Transmission': transmission
                 }
                 car_data.append(car_info)  # Append car info to the list
-                print(f"Compiled Car Info: {car_info}")  # Print compiled car information
+                # print(f"Compiled Car Info: {car_info}")  # Print compiled car information
 
             except Exception as e:
                 print(f"Error extracting car data: {e}")
