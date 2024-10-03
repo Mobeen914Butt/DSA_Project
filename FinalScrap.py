@@ -41,21 +41,21 @@ class ScraperThread(QThread):
         options.add_argument('--ignore-ssl-errors')
         # # make code that takes less amount of internet
         options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-extensions')
-        options.add_argument('--disable-software-rasterizer')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-browser-side-navigation')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-infobars')
-        options.add_argument('--disable-notifications')
-        options.add_argument('--disable-offer-store-unmasked-wallet-cards')
-        options.add_argument('--disable-offer-upload-credit-cards')
-        options.add_argument('--disable-popup-blocking')
-        options.add_argument('--disable-print-preview')
-        options.add_argument('--disable-prompt-on-repost')
-        options.add_argument('--disable-extensions') 
+        # options.add_argument('--disable-dev-shm-usage')
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--disable-extensions')
+        # options.add_argument('--disable-software-rasterizer')
+        # options.add_argument('--disable-dev-shm-usage')
+        # options.add_argument('--disable-browser-side-navigation')
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--disable-infobars')
+        # options.add_argument('--disable-notifications')
+        # options.add_argument('--disable-offer-store-unmasked-wallet-cards')
+        # options.add_argument('--disable-offer-upload-credit-cards')
+        # options.add_argument('--disable-popup-blocking')
+        # options.add_argument('--disable-print-preview')
+        # options.add_argument('--disable-prompt-on-repost')
+        # options.add_argument('--disable-extensions') 
 
 
         # INcreasing load speed of web page
@@ -65,7 +65,7 @@ class ScraperThread(QThread):
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
-        start_page = 250
+        start_page =50
         for page_number in range(start_page, 1500):  # Adjust page limit as needed
             while self.is_paused:  # Check if paused
                 time.sleep(0.1)  # Sleep briefly while paused
@@ -107,7 +107,7 @@ class ScraperThread(QThread):
                 self.progress_updated.emit(progress_value)
 
             # Sleep for a moment to avoid overwhelming the server
-                # time.sleep(0.1)
+                # time.sleep(0.001)
 
         self.scraping_finished.emit()  # Emit finished signal
         self.driver.quit()  # Close the WebDriver
@@ -263,7 +263,7 @@ class MergedApp(QMainWindow):
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
 
         # Set column headers in combo boxes
-        self.columnComboBox.addItems(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"]) 
+        self.columnComboBox.addItems(["Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"]) 
         self.algorithmComboBox.addItems([
             'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
