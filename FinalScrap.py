@@ -37,8 +37,8 @@ class ScraperThread(QThread):
         # # options.add_argument('--headless')  # Run the browser in the background
         # options.add_argument('--enable-gpu')
         options.page_load_strategy = 'eager' 
-        # options.add_argument('--ignore-certificate-errors')
-        # options.add_argument('--ignore-ssl-errors')
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
         # # make code that takes less amount of internet
         # options.add_argument('--no-sandbox')
         # options.add_argument('--disable-dev-shm-usage')
@@ -49,7 +49,7 @@ class ScraperThread(QThread):
         # options.add_argument('--disable-browser-side-navigation')
         # options.add_argument('--disable-gpu')
         # options.add_argument('--disable-infobars')
-        # options.add_argument('--disable-notifications')
+        options.add_argument('--disable-notifications')
         # options.add_argument('--disable-offer-store-unmasked-wallet-cards')
         # options.add_argument('--disable-offer-upload-credit-cards')
         # options.add_argument('--disable-popup-blocking')
@@ -64,48 +64,99 @@ class ScraperThread(QThread):
         # options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome(service=service, options=options)
 
+    # def run(self):
+    #     while not self.is_stopped:
+    #         if self.is_paused:
+    #             time.sleep(1)
+    #             continue
+    #     start_page = 550
+    #     for page_number in range(start_page, 1500):  # Adjust page limit as needed
+    #         if self.product_count >= self.max_products or self.is_stopped:
+    #             break
+            
+    #         url = f"https://www.pakwheels.com/used-cars/family-cars/587667?page={page_number}"
+    #         self.driver.get(url)
+    #         # print(f"Scraping page {page_number}: {url}")
+
+    #         # Use explicit wait to ensure the car cards are present
+    #         try:
+    #             WebDriverWait(self.driver, 3).until(
+    #                 EC.presence_of_element_located((By.CLASS_NAME, 'search-title-row'))
+    #             )
+    #         except Exception as e:
+    #             print(f"Error loading page: {e}")
+    #             continue  
+            
+    #         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+
+    #         # Extract car data
+    #         car_data_list = self.extract_car_data(soup)
+
+    #         # Process each car's data
+    #         for car_data in car_data_list:
+    #             if self.product_count >= self.max_products or self.is_stopped:
+    #                 break
+
+    #             # Emit the car data
+    #             self.data_updated.emit(car_data)  # Emit car data as a dictionary
+
+    #             # Save the data to CSV
+    #             self.save_to_csv(car_data)
+    #             self.product_count += 1
+
+    #             # Update the progress
+    #             progress_value = (self.product_count * 100) // self.max_products
+    #             self.progress_updated.emit(progress_value)
+
+    #             # Sleep for a moment to avoid overwhelming the server
+    #             time.sleep(0.01)
+
+    #     self.scraping_finished.emit()  # Emit finished signal
+    #     self.driver.quit()  # Close the WebDriver
     def run(self):
-        start_page = 350
+        start_page = 600
         for page_number in range(start_page, 1500):  # Adjust page limit as needed
+            while self.is_paused:  # Check if paused
+                time.sleep(0.1)  # Sleep briefly while paused
+
             if self.product_count >= self.max_products or self.is_stopped:
                 break
-            
+        
             url = f"https://www.pakwheels.com/used-cars/family-cars/587667?page={page_number}"
             self.driver.get(url)
-            # print(f"Scraping page {page_number}: {url}")
 
-            # Use explicit wait to ensure the car cards are present
+        # Use explicit wait to ensure the car cards are present
             try:
                 WebDriverWait(self.driver, 3).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'search-title-row'))
-                )
+                EC.presence_of_element_located((By.CLASS_NAME, 'search-title-row'))
+            )
             except Exception as e:
                 print(f"Error loading page: {e}")
                 continue  
-            
+        
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
 
-            # Extract car data
+        # Extract car data
             car_data_list = self.extract_car_data(soup)
 
-            # Process each car's data
+        # Process each car's data
             for car_data in car_data_list:
                 if self.product_count >= self.max_products or self.is_stopped:
                     break
 
-                # Emit the car data
+            # Emit the car data
                 self.data_updated.emit(car_data)  # Emit car data as a dictionary
 
-                # Save the data to CSV
+            # Save the data to CSV
                 self.save_to_csv(car_data)
                 self.product_count += 1
 
-                # Update the progress
+            # Update the progress
                 progress_value = (self.product_count * 100) // self.max_products
                 self.progress_updated.emit(progress_value)
 
-                # Sleep for a moment to avoid overwhelming the server
-                # time.sleep(0.01)
+            # Sleep for a moment to avoid overwhelming the server
+                time.sleep(0.01)
 
         self.scraping_finished.emit()  # Emit finished signal
         self.driver.quit()  # Close the WebDriver
@@ -268,6 +319,7 @@ class MergedApp(QMainWindow):
             'Radix Sort', 'Counting Sort'
         ])
 
+        
 
     def start_scraping(self):
         self.df = pd.DataFrame(columns=(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])) 
