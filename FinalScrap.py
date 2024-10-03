@@ -28,7 +28,7 @@ class ScraperThread(QThread):
         self.is_paused = False
         self.is_stopped = False
         self.product_count = 0
-        self.max_products = 25500  # You can adjust this limit
+        self.max_products = 550  # You can adjust this limit
         self.csv_file_path = 'carsdata.csv'
         
         # Set up Selenium WebDriver
@@ -382,33 +382,33 @@ class MergedApp(QMainWindow):
     #             j -= 1
     #         sorted_df.iloc[j + 1] = key
     #     return sorted_df
-def insertion_sort(self, df, column):
-    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
-    for i in range(1, len(sorted_df)):
-        key = sorted_df.iloc[i]
-        j = i - 1
+    def insertion_sort(self, df, column):
+        sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+        for i in range(1, len(sorted_df)):
+            key = sorted_df.iloc[i]
+            j = i - 1
 
         # Compare key with the previous elements
-        while j >= 0:
+            while j >= 0:
             # Ensure comparison is valid (both should be of the same type)
-            if isinstance(key[column], str) and isinstance(sorted_df.iloc[j][column], str):
-                if key[column] < sorted_df.iloc[j][column]:
-                    sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+                if isinstance(key[column], str) and isinstance(sorted_df.iloc[j][column], str):
+                    if key[column] < sorted_df.iloc[j][column]:
+                        sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+                    else:
+                        break  # Stop if the order is correct
+                elif isinstance(key[column], (int, float)) and isinstance(sorted_df.iloc[j][column], (int, float)):
+                    if key[column] < sorted_df.iloc[j][column]:
+                        sorted_df.iloc[j + 1] = sorted_df.iloc[j]
+                    else:
+                        break  # Stop if the order is correct
                 else:
-                    break  # Stop if the order is correct
-            elif isinstance(key[column], (int, float)) and isinstance(sorted_df.iloc[j][column], (int, float)):
-                if key[column] < sorted_df.iloc[j][column]:
-                    sorted_df.iloc[j + 1] = sorted_df.iloc[j]
-                else:
-                    break  # Stop if the order is correct
-            else:
                 # If types are mixed, we can define a strategy (e.g., place strings after numbers)
-                if isinstance(key[column], str):
-                    break  # Stop since we consider strings after numbers
-            j -= 1
+                    if isinstance(key[column], str):
+                        break  # Stop since we consider strings after numbers
+                j -= 1
 
-        sorted_df.iloc[j + 1] = key  # Place the key in the correct position
-    return sorted_df
+            sorted_df.iloc[j + 1] = key  # Place the key in the correct position
+        return sorted_df
 
 
 
@@ -421,28 +421,28 @@ def insertion_sort(self, df, column):
     #                 min_idx = j
     #         sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
     #     return sorted_df
-def selection_sort(self, df, column):
-    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
-    for i in range(len(sorted_df)):
-        min_idx = i
-        for j in range(i + 1, len(sorted_df)):
+    def selection_sort(self, df, column):
+        sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+        for i in range(len(sorted_df)):
+            min_idx = i
+            for j in range(i + 1, len(sorted_df)):
             # Ensure valid comparisons based on types
-            if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[min_idx], str):
-                if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
-                    min_idx = j
-            elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[min_idx], (int, float)):
-                if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
-                    min_idx = j
-            elif isinstance(sorted_df[column].iloc[j], str):
+                if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[min_idx], str):
+                    if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
+                        min_idx = j
+                elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[min_idx], (int, float)):
+                    if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
+                        min_idx = j
+                elif isinstance(sorted_df[column].iloc[j], str):
                 # If min_idx is a number, and j is a string, keep min_idx
-                continue  # Strings are treated as larger than numbers
-            elif isinstance(sorted_df[column].iloc[min_idx], str):
-                min_idx = j  # If the current min_idx is a string, replace it with a number if found
+                    continue  # Strings are treated as larger than numbers
+                elif isinstance(sorted_df[column].iloc[min_idx], str):
+                    min_idx = j  # If the current min_idx is a string, replace it with a number if found
 
         # Swap the found minimum element with the first element
-        sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
+            sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
 
-    return sorted_df
+        return sorted_df
 
     # def bubble_sort(self, df, column):
     #     sorted_df = df.copy()
@@ -469,34 +469,34 @@ def selection_sort(self, df, column):
     #         if not isSwapped:
     #             break
     #     return sorted_df
-def bubble_sort(self, df, column):
-    sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
-    n = len(sorted_df)
+    def bubble_sort(self, df, column):
+        sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+        n = len(sorted_df)
 
-    for i in range(n):
-        isSwapped = False
-        for j in range(n - 1 - i):  # Reduce range as the largest elements bubble to the end
+        for i in range(n):
+            isSwapped = False
+            for j in range(n - 1 - i):  # Reduce range as the largest elements bubble to the end
             # Ensure valid comparisons based on types
-            if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[j + 1], str):
-                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
-                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
-                    isSwapped = True
-            elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[j + 1], (int, float)):
-                if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
-                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
-                    isSwapped = True
-            elif isinstance(sorted_df[column].iloc[j], str):
+                if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[j + 1], str):
+                    if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
+                        sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                        isSwapped = True
+                elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[j + 1], (int, float)):
+                    if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
+                        sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                        isSwapped = True
+                elif isinstance(sorted_df[column].iloc[j], str):
                 # If j+1 is a number, keep j
-                continue  # Strings are treated as larger than numbers
-            elif isinstance(sorted_df[column].iloc[j + 1], str):
+                    continue  # Strings are treated as larger than numbers
+                elif isinstance(sorted_df[column].iloc[j + 1], str):
                 # If j is a number and j+1 is a string, swap j with j+1
-                sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
-                isSwapped = True
+                    sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
+                    isSwapped = True
 
-        if not isSwapped:
-            break  # No swaps mean the array is sorted
+            if not isSwapped:
+                break  # No swaps mean the array is sorted
 
-    return sorted_df
+        return sorted_df
 
     # def quick_sort(self, df, column):
     #     # Implement Quick Sort
@@ -508,54 +508,54 @@ def bubble_sort(self, df, column):
     #     middle = sorted_df[sorted_df[column] == pivot]
     #     right = sorted_df[sorted_df[column] > pivot]
     #     return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
-def quick_sort(self, df, column):
-    sorted_df = df.copy()
-    if len(sorted_df) <= 1:
-        return sorted_df
-    
-    # Choose pivot
-    pivot = sorted_df[column].iloc[len(sorted_df) // 2]
-
-    # Create left, middle, right DataFrames based on the pivot
-    left = sorted_df[sorted_df[column] < pivot]
-    middle = sorted_df[sorted_df[column] == pivot]
-    right = sorted_df[sorted_df[column] > pivot]
-
-    return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
-
-    def merge_sort(self, df, column):
-        # Implement Merge Sort
+    def quick_sort(self, df, column):
         sorted_df = df.copy()
         if len(sorted_df) <= 1:
             return sorted_df
-        mid = len(sorted_df) // 2
-        left_half = self.merge_sort(sorted_df.iloc[:mid], column)
-        right_half = self.merge_sort(sorted_df.iloc[mid:], column)
-        return self.merge(left_half, right_half, column)
+    
+    # Choose pivot
+        pivot = sorted_df[column].iloc[len(sorted_df) // 2]
 
-    def merge(self, left, right, column):
-        result = pd.DatasFrame(columns=left.columns)
-        i = j = 0
+    # Create left, middle, right DataFrames based on the pivot
+        left = sorted_df[sorted_df[column] < pivot]
+        middle = sorted_df[sorted_df[column] == pivot]
+        right = sorted_df[sorted_df[column] > pivot]
+
+        return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
+
+        def merge_sort(self, df, column):
+        # Implement Merge Sort
+            sorted_df = df.copy()
+            if len(sorted_df) <= 1:
+                return sorted_df
+            mid = len(sorted_df) // 2
+            left_half = self.merge_sort(sorted_df.iloc[:mid], column)
+            right_half = self.merge_sort(sorted_df.iloc[mid:], column)
+            return self.merge(left_half, right_half, column)
+
+        def merge(self, left, right, column):
+            result = pd.DatasFrame(columns=left.columns)
+            i = j = 0
         # Merge the two halves while there are elements in both
-        while i < len(left) and j < len(right):
-            if left[column].iloc[i] <= right[column].iloc[j]:
-                result = pd.concat([result, left.iloc[[i]]],ignore_index=True)
-                i += 1
-            else:
-                result = pd.concat([result, right.iloc[[j]]],ignore_index=True)
-                j += 1
+            while i < len(left) and j < len(right):
+                if left[column].iloc[i] <= right[column].iloc[j]:
+                    result = pd.concat([result, left.iloc[[i]]],ignore_index=True)
+                    i += 1
+                else:
+                    result = pd.concat([result, right.iloc[[j]]],ignore_index=True)
+                    j += 1
         
         # If there are remaining elements in the left half, add them
-        while i < len(left):
-            result = pd.concat([result, left.iloc[[i]]])
-            i += 1
+            while i < len(left):
+                result = pd.concat([result, left.iloc[[i]]])
+                i += 1
         
         # If there are remaining elements in the right half, add them
-        while j < len(right):
-            result = pd.concat([result, right.iloc[[j]]])
-            j += 1
+            while j < len(right):
+                result = pd.concat([result, right.iloc[[j]]])
+                j += 1
             
-        return result
+            return result
 
     
     def bucket_sort(self, df, column):
@@ -648,71 +648,72 @@ def quick_sort(self, df, column):
 
         else:
             return df
-def shell_sort(self, df, column):
-    sorted_df = df.copy()
-    n = len(sorted_df)
-    gap = n // 2  # Initialize gap size
 
-    while gap > 0:
-        for i in range(gap, n):
-            temp = sorted_df.iloc[i]
-            j = i
+    def shell_sort(self, df, column):
+        sorted_df = df.copy()
+        n = len(sorted_df)
+        gap = n // 2  # Initialize gap size
+
+        while gap > 0:
+            for i in range(gap, n):
+                temp = sorted_df.iloc[i]
+                j = i
             
             # Shift earlier gap-sorted elements up until the correct location for temp is found
-            while j >= gap and sorted_df[column].iloc[j - gap] > temp[column]:
-                sorted_df.iloc[j] = sorted_df.iloc[j - gap]
-                j -= gap
+                while j >= gap and sorted_df[column].iloc[j - gap] > temp[column]:
+                    sorted_df.iloc[j] = sorted_df.iloc[j - gap]
+                    j -= gap
             
-            sorted_df.iloc[j] = temp
-        gap //= 2
-    return sorted_df
+                sorted_df.iloc[j] = temp
+            gap //= 2
+        return sorted_df
 
-def pigeonhole_sort(self, df, column):
-    sorted_df = df.copy()
+    def pigeonhole_sort(self, df, column):
+        sorted_df = df.copy()
     
     # Step 1: Find the range of the values
-    min_value = sorted_df[column].min()
-    max_value = sorted_df[column].max()
+        min_value = sorted_df[column].min()
+        max_value = sorted_df[column].max()
     
     # Step 2: Create pigeonholes
-    size = max_value - min_value + 1
-    holes = [[] for _ in range(size)]
+        size = max_value - min_value + 1
+        holes = [[] for _ in range(size)]
 
     # Step 3: Place each element in its corresponding pigeonhole
-    for value in sorted_df[column]:
-        holes[value - min_value].append(value)
+        for value in sorted_df[column]:
+            holes[value - min_value].append(value)
 
     # Step 4: Flatten the holes into the sorted order
-    sorted_index = 0
-    for hole in holes:
-        for value in hole:
-            sorted_df.iloc[sorted_index] = value
-            sorted_index += 1
+        sorted_index = 0
+        for hole in holes:
+            for value in hole:
+                sorted_df.iloc[sorted_index] = value
+                sorted_index += 1
     
-    return sorted_df
+        return sorted_df
 
-def comb_sort(self, df, column):
-    sorted_df = df.copy()
-    n = len(sorted_df)
-    gap = n
-    shrink = 1.3  # Shrink factor
-    sorted = False
+    def comb_sort(self, df, column):
+        sorted_df = df.copy()
+        n = len(sorted_df)
+        gap = n
+        shrink = 1.3  # Shrink factor
+        sorted = False
 
-    while not sorted:
+        while not sorted:
         # Update the gap value for this iteration
-        gap = int(gap / shrink)
-        if gap < 1:
-            gap = 1
-        sorted = True
+            gap = int(gap / shrink)
+            if gap < 1:
+                gap = 1
+            sorted = True
 
         # Compare elements that are 'gap' apart
-        for i in range(n - gap):
-            if sorted_df[column].iloc[i] > sorted_df[column].iloc[i + gap]:
+            for i in range(n - gap):
+                if sorted_df[column].iloc[i] > sorted_df[column].iloc[i + gap]:
                 # Swap if the elements are out of order
-                sorted_df.iloc[i], sorted_df.iloc[i + gap] = sorted_df.iloc[i + gap], sorted_df.iloc[i]
-                sorted = False
+                    sorted_df.iloc[i], sorted_df.iloc[i + gap] = sorted_df.iloc[i + gap], sorted_df.iloc[i]
+                    sorted = False
 
-    return sorted_df
+        return sorted_df
 
 
 
