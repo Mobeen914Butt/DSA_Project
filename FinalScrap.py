@@ -28,7 +28,7 @@ class ScraperThread(QThread):
         self.is_paused = False
         self.is_stopped = False
         self.product_count = 0
-        self.max_products = 200  # You can adjust this limit
+        self.max_products = 25500  # You can adjust this limit
         self.csv_file_path = 'scraped_data1.csv'
         
         # Set up Selenium WebDriver
@@ -38,7 +38,7 @@ class ScraperThread(QThread):
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
-        for page_number in range(1, 100):  # Adjust page limit as needed
+        for page_number in range(1, 1500):  # Adjust page limit as needed
             if self.product_count >= self.max_products or self.is_stopped:
                 break
             
@@ -100,6 +100,7 @@ class ScraperThread(QThread):
                 # Extract sold by
                 sold_by_tag = card.find('span', class_='sold-by-pw')
                 sold_by = sold_by_tag.get_text(strip=True) if sold_by_tag else 'N/A'
+
 
                 # Extract location and additional details
                 details_card = card.find_next('div', class_='col-md-12 grid-date')
@@ -165,7 +166,7 @@ class MergedApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating","Discount","Rating_Count"]) # Add Discount and Rating Count
+        self.df = pd.DataFrame( columns=["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
 
     def setupUi(self):
         self.setWindowTitle("Web Scraper and Data Sorter")
@@ -213,8 +214,8 @@ class MergedApp(QMainWindow):
 
         # Table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(7) # add one more column for Discount
-        self.tableWidget.setHorizontalHeaderLabels(["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
+        self.tableWidget.setColumnCount(9) # add one more column for Discount
+        self.tableWidget.setHorizontalHeaderLabels(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.tableWidget)
 
@@ -233,18 +234,16 @@ class MergedApp(QMainWindow):
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
 
         # Set column headers in combo boxes
-        self.columnComboBox.addItems(["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
+        self.columnComboBox.addItems(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"]) 
         self.algorithmComboBox.addItems([
             'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
             'Quick Sort', 'Merge Sort', 'Bucket Sort', 
             'Radix Sort', 'Counting Sort'
         ])
 
-      
-
 
     def start_scraping(self):
-        self.df = pd.DataFrame(columns=["Product Name", "Price", "Sold", "Location", "Rating", "Discount","Rating_Count"]) # Add Discount and Rating Count
+        self.df = pd.DataFrame(columns=(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])) 
         self.tableWidget.setRowCount(0)
         self.scraper_thread.is_stopped = False
         self.scraper_thread.start()
@@ -262,13 +261,21 @@ class MergedApp(QMainWindow):
     def update_progress(self, value):
         self.progress_bar.setValue(value)
 
+    # def update_table(self, product_data):
+    #     row_position = self.tableWidget.rowCount()
+    #     self.tableWidget.insertRow(row_position)
+    #     for i, data in enumerate(product_data):
+    #         self.tableWidget.setItem(row_position, i, QTableWidgetItem(str(data)))
+        
+    #     # Update the DataFrame
+    #     self.df = pd.concat([self.df, pd.DataFrame([product_data], columns=self.df.columns)], ignore_index=True)
     def update_table(self, product_data):
         row_position = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row_position)
-        for i, data in enumerate(product_data):
-            self.tableWidget.setItem(row_position, i, QTableWidgetItem(str(data)))
-        
-        # Update the DataFrame
+    
+        for column_index, key in enumerate(product_data.keys()):
+            self.tableWidget.setItem(row_position, column_index, QTableWidgetItem(str(product_data[key])))
+
         self.df = pd.concat([self.df, pd.DataFrame([product_data], columns=self.df.columns)], ignore_index=True)
 
     def on_scraping_finished(self):
