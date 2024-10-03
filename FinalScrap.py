@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 
 class ScraperThread(QThread):
     progress_updated = pyqtSignal(int)
-    data_updated = pyqtSignal(dict)  # Emit a dictionary for car data
+    data_updated = pyqtSignal(dict) 
     scraping_finished = pyqtSignal()
 
     def __init__(self):
@@ -29,7 +29,7 @@ class ScraperThread(QThread):
         self.is_stopped = False
         self.product_count = 0
         self.max_products = 25500  # You can adjust this limit
-        self.csv_file_path = 'scraped_data1.csv'
+        self.csv_file_path = 'carsdata.csv'
         
         # Set up Selenium WebDriver
         service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
@@ -53,9 +53,8 @@ class ScraperThread(QThread):
                 )
             except Exception as e:
                 print(f"Error loading page: {e}")
-                continue  # Skip to the next page if there's an error
-
-            # Get the page source and create a BeautifulSoup object
+                continue  
+            
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
 
             # Extract car data
@@ -78,7 +77,7 @@ class ScraperThread(QThread):
                 self.progress_updated.emit(progress_value)
 
                 # Sleep for a moment to avoid overwhelming the server
-                time.sleep(0.1)
+                time.sleep(0.01)
 
         self.scraping_finished.emit()  # Emit finished signal
         self.driver.quit()  # Close the WebDriver
