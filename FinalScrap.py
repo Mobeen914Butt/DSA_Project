@@ -183,6 +183,13 @@ class MergedApp(QMainWindow):
         self.scraper_thread.progress_updated.connect(self.update_progress)
         self.scraper_thread.data_updated.connect(self.update_table)
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
+        
+        # Connect scraper controls
+        self.start_button.clicked.connect(self.start_scraping)
+        self.pause_button.clicked.connect(self.pause_scraping)
+        self.resume_button.clicked.connect(self.resume_scraping)
+        self.stop_button.clicked.connect(self.stop_scraping)
+        
 
     def setupUi(self):
         self.setGeometry(100, 100, 800, 600)
