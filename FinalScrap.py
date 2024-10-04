@@ -34,34 +34,13 @@ class ScraperThread(QThread):
         # Set up Selenium WebDriver
         service = Service(executable_path="D:\Semester 3\DSA\chromedriver-win64\chromedriver-win64\chromedriver.exe")
         options = webdriver.ChromeOptions()
-        # # options.add_argument('--headless')  # Run the browser in the background
-        # options.add_argument('--enable-gpu')
+        options.add_argument('--enable-gpu')
+        options.add_argument('--svm-disable')
         options.page_load_strategy = 'eager' 
+        # enable gpu, sandbox off,aur svm disable usage kiya tb huwa fast
         options.add_argument('--ignore-certificate-errors')
         options.add_argument('--ignore-ssl-errors')
-        # # make code that takes less amount of internet
         options.add_argument('--no-sandbox')
-        # options.add_argument('--disable-dev-shm-usage')
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--disable-extensions')
-        # options.add_argument('--disable-software-rasterizer')
-        # options.add_argument('--disable-dev-shm-usage')
-        # options.add_argument('--disable-browser-side-navigation')
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--disable-infobars')
-        # options.add_argument('--disable-notifications')
-        # options.add_argument('--disable-offer-store-unmasked-wallet-cards')
-        # options.add_argument('--disable-offer-upload-credit-cards')
-        # options.add_argument('--disable-popup-blocking')
-        # options.add_argument('--disable-print-preview')
-        # options.add_argument('--disable-prompt-on-repost')
-        # options.add_argument('--disable-extensions') 
-
-
-        # INcreasing load speed of web page
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--no-sandbox')
-        # options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def run(self):
@@ -196,15 +175,14 @@ class MergedApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
-        self.df = pd.DataFrame( columns=["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
+        self.df = pd.DataFrame(columns=["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
 
         # Initialize the scraper thread
         self.scraper_thread = ScraperThread()
         self.scraper_thread.progress_updated.connect(self.update_progress)
         self.scraper_thread.data_updated.connect(self.update_table)
         self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
-        
-   
+
     def setupUi(self):
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Web Scraper and Data Sorter")
@@ -213,13 +191,19 @@ class MergedApp(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
 
-        # Add a placeholder for the algorithm selection combo box
+        # Sort algorithm selection
+        self.layout.addWidget(QLabel("Select a sorting algorithm:"))
         self.algorithmComboBox1 = QComboBox()
         self.algorithmComboBox1.addItems(["Insertion Sort", "Selection Sort", "Bubble Sort", "Quick Sort", "Merge Sort", "Bucket Sort", "Radix Sort", "Counting Sort", "Shell Sort", "Pigeonhole Sort", "Comb Sort"])
-        self.layout.addWidget(QLabel("Select an algorithm:"))
         self.layout.addWidget(self.algorithmComboBox1)
-        
-            # Scraper controls
+
+        # Search algorithm selection
+        self.layout.addWidget(QLabel("Select a search algorithm:"))
+        self.algorithmComboBox = QComboBox()
+        self.algorithmComboBox.addItems(["Binary Search", "Linear Search"])
+        self.layout.addWidget(self.algorithmComboBox)
+
+        # Scraper controls
         self.scraper_controls = QHBoxLayout()
         self.start_button = QPushButton("Start Scraping")
         self.pause_button = QPushButton("Pause")
@@ -230,42 +214,36 @@ class MergedApp(QMainWindow):
         self.scraper_controls.addWidget(self.resume_button)
         self.scraper_controls.addWidget(self.stop_button)
         self.layout.addLayout(self.scraper_controls)
-        self.start_button.clicked.connect(self.start_scraping)  
+        self.start_button.clicked.connect(self.start_scraping)
 
         self.progress_bar = QProgressBar()
         self.layout.addWidget(self.progress_bar)
 
-            # Sorter controls
-        self.sorter_controls = QVBoxLayout()  
+        # Sorter controls
+        self.sorter_controls = QVBoxLayout()
 
-            # First sorting level
+        # First sorting level
         self.sort_level_1_layout = QHBoxLayout()
         self.columnComboBox1 = QComboBox()
         self.columnComboBox1.addItems(["Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
-        self.sortOrderComboBox1 = QComboBox()
-        self.sortOrderComboBox1.addItems(["Ascending", "Descending"])
         self.sort_level_1_layout.addWidget(QLabel("Sort by:"))
         self.sort_level_1_layout.addWidget(self.columnComboBox1)
-        self.sort_level_1_layout.addWidget(self.sortOrderComboBox1)
         self.sorter_controls.addLayout(self.sort_level_1_layout)
 
-            # Second sorting level (optional)
+        # Second sorting level (optional)
         self.sort_level_2_layout = QHBoxLayout()
         self.columnComboBox2 = QComboBox()
         self.columnComboBox2.addItems(["None", "Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
-        self.sortOrderComboBox2 = QComboBox()
-        self.sortOrderComboBox2.addItems(["Ascending", "Descending"])
         self.sort_level_2_layout.addWidget(QLabel("Then by:"))
         self.sort_level_2_layout.addWidget(self.columnComboBox2)
-        self.sort_level_2_layout.addWidget(self.sortOrderComboBox2)
         self.sorter_controls.addLayout(self.sort_level_2_layout)
 
         self.sortButton = QPushButton("Sort")
         self.sorter_controls.addWidget(self.sortButton)
         self.layout.addLayout(self.sorter_controls)
+
         # Search controls
-        self.search_controls = QVBoxLayout()  # Multiple-level search controls
-        # First search level
+        self.search_controls = QVBoxLayout()
         self.search_level_1_layout = QHBoxLayout()
         self.searchLineEdit1 = QLineEdit()
         self.searchLineEdit1.setPlaceholderText("Search...")
@@ -278,7 +256,7 @@ class MergedApp(QMainWindow):
         self.search_level_1_layout.addWidget(self.andOrNotComboBox1)
         self.search_controls.addLayout(self.search_level_1_layout)
 
-            # Second search level
+        # Second search level
         self.search_level_2_layout = QHBoxLayout()
         self.searchLineEdit2 = QLineEdit()
         self.searchLineEdit2.setPlaceholderText("Search...")
@@ -287,47 +265,40 @@ class MergedApp(QMainWindow):
         self.search_level_2_layout.addWidget(self.searchLineEdit2)
         self.search_level_2_layout.addWidget(self.columnComboBoxSearch2)
         self.search_controls.addLayout(self.search_level_2_layout)
+
         self.searchButton = QPushButton("Search")
         self.resetButton = QPushButton("Reset")
         self.search_controls.addWidget(self.searchButton)
         self.search_controls.addWidget(self.resetButton)
         self.layout.addLayout(self.search_controls)
-            # Sorting Time Label
+
+        # Sorting Time Label
         self.sorting_time_label = QLabel("Sorting Time: 0.0 seconds")
         self.layout.addWidget(self.sorting_time_label)
 
-            # Table
+        # Table
         self.tableWidget = QTableWidget()
         self.tableWidget.setColumnCount(9)
         self.tableWidget.setHorizontalHeaderLabels(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.tableWidget)
 
-        
-            # Load Button
+        # Load Button
         self.loadButton = QPushButton("Load Data")
         self.layout.addWidget(self.loadButton)
         self.loadButton.clicked.connect(self.load_data)
-        
-            # Connect signals
+
+        # Connect signals
         self.sortButton.clicked.connect(self.sort_data)
         self.searchButton.clicked.connect(self.search_data)
         self.resetButton.clicked.connect(self.reset_data)
-        
 
-        # self_text1=self.searchLineEdit1.text().lower()
-        # search_text2=self.searchLineEdit2.text().lower()
-        
-        # self.searchLineEdit1.clear()
-        # self.searchLineEdit2.clear()
-    
     def load_data(self):
-        self.df = pd.read_csv('check.csv')  #you can change the file name
+        self.df = pd.read_csv('check.csv')  # Change the file name as needed
         self.populate_table(self.df)
-        
 
     def start_scraping(self):
-        self.df = pd.DataFrame(columns=(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])) 
+        self.df = pd.DataFrame(columns=(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"]))
         self.tableWidget.setRowCount(0)
         self.scraper_thread.is_stopped = False
         self.scraper_thread.start()
@@ -345,11 +316,10 @@ class MergedApp(QMainWindow):
     def update_progress(self, value):
         self.progress_bar.setValue(value)
 
-    
     def update_table(self, product_data):
         row_position = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row_position)
-    
+
         for column_index, key in enumerate(product_data.keys()):
             self.tableWidget.setItem(row_position, column_index, QTableWidgetItem(str(product_data[key])))
 
@@ -359,102 +329,155 @@ class MergedApp(QMainWindow):
         # Clear the table
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
-        
+
         # Set the number of rows and columns based on the DataFrame
         num_rows, num_cols = self.df.shape
         self.tableWidget.setRowCount(num_rows)
         self.tableWidget.setColumnCount(num_cols)
-        
+
         # Set the column headers
         self.tableWidget.setHorizontalHeaderLabels(self.df.columns)
-        
+
         # Populate the table with the DataFrame values
         for i in range(num_rows):
             for j in range(num_cols):
-                item=QTableWidgetItem(str(self.df.iat[i, j]))
+                item = QTableWidgetItem(str(self.df.iat[i, j]))
                 self.tableWidget.setItem(i, j, item)
-                
-            # Optionally adjust columns widths
-            self.tableWidget.resizeColumnsToContents()
-                                         
+
+        # Optionally adjust columns widths
+        self.tableWidget.resizeColumnsToContents()
+
     def on_scraping_finished(self):
         print("Scraping finished!")
         # You can add any additional actions here, like enabling/disabling buttons
+    # def search_data(self):
+    #     conditions = []
+    
+    # # Fix: Use the correct widget name 'searchLineEdit1'
+    #     search_text = self.searchLineEdit1.text().lower()
+    #     selected_column = self.columnComboBoxSearch1.currentText()
+    
+    #     if search_text and selected_column:
+    #         conditions.append((selected_column, search_text))
+
+    #     search_text2 = self.searchLineEdit2.text().lower()
+    #     selected_column2 = self.columnComboBoxSearch2.currentText()
+    
+    #     if search_text2 and selected_column2:
+    #         conditions.append((selected_column2, search_text2))
+
+    #     operations = self.andOrNotComboBox.currentText()
+
+    #     if operations == "AND":
+    #         filtered_df = self.df.copy()
+    #         for column, value in conditions:
+    #             filtered_df = filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)]
+    #     elif operations == "OR":
+    #         filtered_df = self.df.copy()
+    #         for column, value in conditions:
+    #             filtered_df = filtered_df.append(filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)])
+    #     elif operations == "NOT":
+    #         filtered_df = self.df.copy()
+    #         for column, value in conditions:
+    #             filtered_df = filtered_df[~filtered_df[column].astype(str).str.contains(value, case=False)]
+
+    #     self.populate_table(filtered_df)
 
     def search_data(self):
         conditions = []
     
-    # Fix: Use the correct widget name 'searchLineEdit1'
-        search_text = self.searchLineEdit1.text().lower()
-        selected_column = self.columnComboBoxSearch1.currentText()
+    # First search level
+        search_text1 = self.searchLineEdit1.text().lower()
+        selected_column1 = self.columnComboBoxSearch1.currentText()
     
-        if search_text and selected_column:
-            conditions.append((selected_column, search_text))
-
+        if search_text1 and selected_column1:
+            conditions.append((selected_column1, search_text1))
+    
+    # Second search level
         search_text2 = self.searchLineEdit2.text().lower()
         selected_column2 = self.columnComboBoxSearch2.currentText()
     
-        if search_text2 and selected_column2:
+        if search_text2 and selected_column2 != "None":
             conditions.append((selected_column2, search_text2))
+    
+    # Apply conditions based on AND/OR/NOT
+        logic_operator = self.andOrNotComboBox1.currentText()
+        filtered_df = self.df.copy()
 
-        operations = self.andOrNotComboBox.currentText()
-
-        if operations == "AND":
-            filtered_df = self.df.copy()
+        if logic_operator == "AND":
             for column, value in conditions:
                 filtered_df = filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)]
-        elif operations == "OR":
-            filtered_df = self.df.copy()
+        elif logic_operator == "OR":
+            temp_df = pd.DataFrame()
             for column, value in conditions:
-                filtered_df = filtered_df.append(filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)])
-        elif operations == "NOT":
-            filtered_df = self.df.copy()
+                temp_df = pd.concat([temp_df, filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)]])
+            filtered_df = temp_df.drop_duplicates()
+        elif logic_operator == "NOT":
             for column, value in conditions:
                 filtered_df = filtered_df[~filtered_df[column].astype(str).str.contains(value, case=False)]
+    
+    # Now apply the selected search algorithm after filtering
+        search_algorithm = self.algorithmComboBoxSearch1.currentText()
 
+        if search_algorithm == "Binary Search":
+    # Apply binary search to the filtered dataframe
+            for column, value in conditions:
+                filtered_df = self.binary_search(filtered_df, column, value)
+        elif search_algorithm == "Linear Search":
+    # Apply linear search to the filtered dataframe
+            for column, value in conditions:
+                filtered_df = self.linear_search(filtered_df, column, value)
+
+    
+    # Populate the table with the final search result
         self.populate_table(filtered_df)
-
 
     
     def sort_data(self):
         selected_columns = []
-        ascending_orders = []
 
     # Get values from the first sorting level
         first_column = self.columnComboBox1.currentText()
-        first_order = self.sortOrderComboBox1.currentText()
-    
-    # Check if first column is not "None"
-        if first_column != "None":
+        if first_column:
             selected_columns.append(first_column)
-            ascending_orders.append(first_order == "Ascending")
-
-    # Get values from the second sorting level
-        second_column = self.columnComboBox2.currentText()
-        second_order = self.sortOrderComboBox2.currentText()
+            
+        selected_algorithm = self.algorithmComboBox1.currentText()
+        if selected_algorithm == "Insertion Sort":
+            sorted_df = self.insertion_sort(self.df, first_column)
+        elif selected_algorithm == "Selection Sort":
+            sorted_df = self.selection_sort(self.df, first_column)
+        elif selected_algorithm == "Bubble Sort":
+            sorted_df = self.bubble_sort(self.df, first_column)
+        elif selected_algorithm == "Quick Sort":
+            sorted_df = self.quick_sort(self.df, first_column)
+        elif selected_algorithm == "Merge Sort":
+            sorted_df = self.merge_sort(self.df, first_column)
+        elif selected_algorithm == "Bucket Sort":
+            sorted_df = self.bucket_sort(self.df, first_column)
+        elif selected_algorithm == "Radix Sort":
+            sorted_df = self.radix_sort(self.df, first_column)
+        elif selected_algorithm == "Counting Sort":
+            sorted_df = self.counting_sort(self.df, first_column)
+        elif selected_algorithm == "Shell Sort":
+            sorted_df = self.shell_sort(self.df, first_column)
+        elif selected_algorithm == "Pigeonhole Sort":
+            sorted_df = self.pigeonhole_sort(self.df, first_column)
+        elif selected_algorithm == "Comb Sort":
+            sorted_df = self.comb_sort(self.df, first_column)
+        else:
+            sorted_df = self.df.copy()
+            
+        self.update_table_from_df()
+        
     
-    # Check if second column is not "None"
-        if second_column != "None":
-            selected_columns.append(second_column)
-            ascending_orders.append(second_order == "Ascending")
 
-    # Ensure both lists have the same length
-        if len(selected_columns) != len(ascending_orders):
-            print("Mismatched lengths between selected columns and ascending orders")
-            return  # Exit the function if there's a mismatch
-
-    # Proceed to sort the DataFrame
-        sorted_df = self.df.sort_values(by=selected_columns, ascending=ascending_orders)
-        self.df = sorted_df  # Update the DataFrame
-        self.update_table_from_df()  # Implement this method to refresh the table with the sorted data
-
-    
-
+      # Reset data
     def reset_data(self):
         self.populate_table(self.df)
         self.searchLineEdit1.clear()
         self.searchLineEdit2.clear()
         self.columnComboBox1.setCurrentIndex(0)
+        self.columnComboBox2.setCurrentIndex(0)
         self.algorithmComboBox1.setCurrentIndex(0)
     
     def populate_table(self, df):
