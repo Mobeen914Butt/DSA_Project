@@ -185,6 +185,7 @@ class ScraperThread(QThread):
 
     def resume(self):
         self.is_paused = False
+        
 
     def stop(self):
         self.is_stopped = True
@@ -197,15 +198,28 @@ class MergedApp(QMainWindow):
         self.setupUi()
         self.df = pd.DataFrame( columns=["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
 
+        # Initialize the scraper thread
+        self.scraper_thread = ScraperThread()
+        self.scraper_thread.progress_updated.connect(self.update_progress)
+        self.scraper_thread.data_updated.connect(self.update_table)
+        self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
+        
+   
     def setupUi(self):
-        self.setWindowTitle("Web Scraper and Data Sorter")
         self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle("Web Scraper and Data Sorter")
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
 
-        # Scraper controls
+        # Add a placeholder for the algorithm selection combo box
+        self.algorithmComboBox1 = QComboBox()
+        self.algorithmComboBox1.addItems(["Insertion Sort", "Selection Sort", "Bubble Sort", "Quick Sort", "Merge Sort", "Bucket Sort", "Radix Sort", "Counting Sort", "Shell Sort", "Pigeonhole Sort", "Comb Sort"])
+        self.layout.addWidget(QLabel("Select an algorithm:"))
+        self.layout.addWidget(self.algorithmComboBox1)
+        
+            # Scraper controls
         self.scraper_controls = QHBoxLayout()
         self.start_button = QPushButton("Start Scraping")
         self.pause_button = QPushButton("Pause")
@@ -216,62 +230,100 @@ class MergedApp(QMainWindow):
         self.scraper_controls.addWidget(self.resume_button)
         self.scraper_controls.addWidget(self.stop_button)
         self.layout.addLayout(self.scraper_controls)
+        self.start_button.clicked.connect(self.start_scraping)  
 
         self.progress_bar = QProgressBar()
         self.layout.addWidget(self.progress_bar)
 
-        # Sorter controls
-        self.sorter_controls = QHBoxLayout()
-        self.searchLineEdit = QLineEdit()
-        self.searchLineEdit.setPlaceholderText("Search...")
-        self.searchButton = QPushButton("Search")
-        self.resetButton = QPushButton("Reset")
-        self.columnComboBox = QComboBox()
-        self.algorithmComboBox = QComboBox()
+            # Sorter controls
+        self.sorter_controls = QVBoxLayout()  
+
+            # First sorting level
+        self.sort_level_1_layout = QHBoxLayout()
+        self.columnComboBox1 = QComboBox()
+        self.columnComboBox1.addItems(["Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
+        self.sortOrderComboBox1 = QComboBox()
+        self.sortOrderComboBox1.addItems(["Ascending", "Descending"])
+        self.sort_level_1_layout.addWidget(QLabel("Sort by:"))
+        self.sort_level_1_layout.addWidget(self.columnComboBox1)
+        self.sort_level_1_layout.addWidget(self.sortOrderComboBox1)
+        self.sorter_controls.addLayout(self.sort_level_1_layout)
+
+            # Second sorting level (optional)
+        self.sort_level_2_layout = QHBoxLayout()
+        self.columnComboBox2 = QComboBox()
+        self.columnComboBox2.addItems(["None", "Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
+        self.sortOrderComboBox2 = QComboBox()
+        self.sortOrderComboBox2.addItems(["Ascending", "Descending"])
+        self.sort_level_2_layout.addWidget(QLabel("Then by:"))
+        self.sort_level_2_layout.addWidget(self.columnComboBox2)
+        self.sort_level_2_layout.addWidget(self.sortOrderComboBox2)
+        self.sorter_controls.addLayout(self.sort_level_2_layout)
+
         self.sortButton = QPushButton("Sort")
-        self.sorter_controls.addWidget(self.searchLineEdit)
-        self.sorter_controls.addWidget(self.searchButton)
-        self.sorter_controls.addWidget(self.resetButton)
-        self.sorter_controls.addWidget(self.columnComboBox)
-        self.sorter_controls.addWidget(self.algorithmComboBox)
         self.sorter_controls.addWidget(self.sortButton)
         self.layout.addLayout(self.sorter_controls)
+        # Search controls
+        self.search_controls = QVBoxLayout()  # Multiple-level search controls
+        # First search level
+        self.search_level_1_layout = QHBoxLayout()
+        self.searchLineEdit1 = QLineEdit()
+        self.searchLineEdit1.setPlaceholderText("Search...")
+        self.columnComboBoxSearch1 = QComboBox()
+        self.columnComboBoxSearch1.addItems(["Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
+        self.andOrNotComboBox1 = QComboBox()  # For logical operator
+        self.andOrNotComboBox1.addItems(["AND", "OR", "NOT"])
+        self.search_level_1_layout.addWidget(self.searchLineEdit1)
+        self.search_level_1_layout.addWidget(self.columnComboBoxSearch1)
+        self.search_level_1_layout.addWidget(self.andOrNotComboBox1)
+        self.search_controls.addLayout(self.search_level_1_layout)
 
-        # Sorting Time Label
+            # Second search level
+        self.search_level_2_layout = QHBoxLayout()
+        self.searchLineEdit2 = QLineEdit()
+        self.searchLineEdit2.setPlaceholderText("Search...")
+        self.columnComboBoxSearch2 = QComboBox()
+        self.columnComboBoxSearch2.addItems(["None", "Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
+        self.search_level_2_layout.addWidget(self.searchLineEdit2)
+        self.search_level_2_layout.addWidget(self.columnComboBoxSearch2)
+        self.search_controls.addLayout(self.search_level_2_layout)
+        self.searchButton = QPushButton("Search")
+        self.resetButton = QPushButton("Reset")
+        self.search_controls.addWidget(self.searchButton)
+        self.search_controls.addWidget(self.resetButton)
+        self.layout.addLayout(self.search_controls)
+            # Sorting Time Label
         self.sorting_time_label = QLabel("Sorting Time: 0.0 seconds")
         self.layout.addWidget(self.sorting_time_label)
 
-        # Table
+            # Table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(9) # add one more column for Discount
+        self.tableWidget.setColumnCount(9)
         self.tableWidget.setHorizontalHeaderLabels(["Name", "Price", "Sold By", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"])
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.tableWidget)
 
-        # Connect signals
-        self.start_button.clicked.connect(self.start_scraping)
-        self.pause_button.clicked.connect(self.pause_scraping)
-        self.resume_button.clicked.connect(self.resume_scraping)
-        self.stop_button.clicked.connect(self.stop_scraping)
-        self.searchButton.clicked.connect(self.search_data)
+        
+            # Load Button
+        self.loadButton = QPushButton("Load Data")
+        self.layout.addWidget(self.loadButton)
+        self.loadButton.clicked.connect(self.load_data)
+        
+            # Connect signals
         self.sortButton.clicked.connect(self.sort_data)
+        self.searchButton.clicked.connect(self.search_data)
         self.resetButton.clicked.connect(self.reset_data)
+        
 
-        self.scraper_thread = ScraperThread()
-        self.scraper_thread.progress_updated.connect(self.update_progress)
-        self.scraper_thread.data_updated.connect(self.update_table)
-        self.scraper_thread.scraping_finished.connect(self.on_scraping_finished)
-
-        # Set column headers in combo boxes
-        self.columnComboBox.addItems(["Name", "Price", "Location", "Model Year", "Mileage", "Fuel Type", "Engine Capacity", "Transmission"]) 
-        self.algorithmComboBox.addItems([
-            'Insertion Sort', 'Selection Sort', 'Bubble Sort', 
-            'Quick Sort', 'Merge Sort', 'Bucket Sort', 
-            'Radix Sort', 'Counting Sort', 'Shell Sort',
-            'Pigeonhole Sort', 'Comb Sort'
-
-        ])
-
+        # self_text1=self.searchLineEdit1.text().lower()
+        # search_text2=self.searchLineEdit2.text().lower()
+        
+        # self.searchLineEdit1.clear()
+        # self.searchLineEdit2.clear()
+    
+    def load_data(self):
+        self.df = pd.read_csv('check.csv')  #you can change the file name
+        self.populate_table(self.df)
         
 
     def start_scraping(self):
@@ -293,14 +345,7 @@ class MergedApp(QMainWindow):
     def update_progress(self, value):
         self.progress_bar.setValue(value)
 
-    # def update_table(self, product_data):
-    #     row_position = self.tableWidget.rowCount()
-    #     self.tableWidget.insertRow(row_position)
-    #     for i, data in enumerate(product_data):
-    #         self.tableWidget.setItem(row_position, i, QTableWidgetItem(str(data)))
-        
-    #     # Update the DataFrame
-    #     self.df = pd.concat([self.df, pd.DataFrame([product_data], columns=self.df.columns)], ignore_index=True)
+    
     def update_table(self, product_data):
         row_position = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row_position)
@@ -310,78 +355,116 @@ class MergedApp(QMainWindow):
 
         self.df = pd.concat([self.df, pd.DataFrame([product_data], columns=self.df.columns)], ignore_index=True)
 
+    def update_table_from_df(self):
+        # Clear the table
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnCount(0)
+        
+        # Set the number of rows and columns based on the DataFrame
+        num_rows, num_cols = self.df.shape
+        self.tableWidget.setRowCount(num_rows)
+        self.tableWidget.setColumnCount(num_cols)
+        
+        # Set the column headers
+        self.tableWidget.setHorizontalHeaderLabels(self.df.columns)
+        
+        # Populate the table with the DataFrame values
+        for i in range(num_rows):
+            for j in range(num_cols):
+                item=QTableWidgetItem(str(self.df.iat[i, j]))
+                self.tableWidget.setItem(i, j, item)
+                
+            # Optionally adjust columns widths
+            self.tableWidget.resizeColumnsToContents()
+                                         
     def on_scraping_finished(self):
         print("Scraping finished!")
         # You can add any additional actions here, like enabling/disabling buttons
 
     def search_data(self):
-        search_text = self.searchLineEdit.text().lower()
-        filtered_df = self.df[self.df.apply(lambda row: row.astype(str).str.contains(search_text).any(), axis=1)]
+        conditions = []
+    
+    # Fix: Use the correct widget name 'searchLineEdit1'
+        search_text = self.searchLineEdit1.text().lower()
+        selected_column = self.columnComboBoxSearch1.currentText()
+    
+        if search_text and selected_column:
+            conditions.append((selected_column, search_text))
+
+        search_text2 = self.searchLineEdit2.text().lower()
+        selected_column2 = self.columnComboBoxSearch2.currentText()
+    
+        if search_text2 and selected_column2:
+            conditions.append((selected_column2, search_text2))
+
+        operations = self.andOrNotComboBox.currentText()
+
+        if operations == "AND":
+            filtered_df = self.df.copy()
+            for column, value in conditions:
+                filtered_df = filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)]
+        elif operations == "OR":
+            filtered_df = self.df.copy()
+            for column, value in conditions:
+                filtered_df = filtered_df.append(filtered_df[filtered_df[column].astype(str).str.contains(value, case=False)])
+        elif operations == "NOT":
+            filtered_df = self.df.copy()
+            for column, value in conditions:
+                filtered_df = filtered_df[~filtered_df[column].astype(str).str.contains(value, case=False)]
+
         self.populate_table(filtered_df)
 
+
+    
     def sort_data(self):
-        selected_column = self.columnComboBox.currentText()
-        selected_algorithm = self.algorithmComboBox.currentText()
+        selected_columns = []
+        ascending_orders = []
 
-        if selected_algorithm and selected_column:
-            start_time = time.time()
-            if selected_algorithm == 'Insertion Sort':
-                sorted_df = self.insertion_sort(self.df, selected_column)
-            elif selected_algorithm == 'Selection Sort':
-                sorted_df = self.selection_sort(self.df, selected_column)
-            elif selected_algorithm == 'Bubble Sort':
-                sorted_df = self.bubble_sort(self.df, selected_column)
-            elif selected_algorithm == 'Quick Sort':
-                sorted_df = self.quick_sort(self.df, selected_column)
-            elif selected_algorithm == 'Merge Sort':
-                sorted_df = self.merge_sort(self.df, selected_column)
-            elif selected_algorithm == 'Bucket Sort':
-                sorted_df = self.bucket_sort(self.df, selected_column)
-            elif selected_algorithm == 'Radix Sort':
-                sorted_df = self.radix_sort(self.df, selected_column)
-            elif selected_algorithm == 'Counting Sort':
-                sorted_df = self.counting_sort(self.df, selected_column)
-            elif selected_algorithm == 'Shell Sort':
-                sorted_df = self.shell_sort(self.df, selected_column)
-            elif selected_algorithm == 'Pigeonhole Sort':
-                sorted_df = self.pigeonhole_sort(self.df, selected_column)
-            elif selected_algorithm == 'Comb Sort':
-                sorted_df = self.comb_sort(self.df, selected_column)
+    # Get values from the first sorting level
+        first_column = self.columnComboBox1.currentText()
+        first_order = self.sortOrderComboBox1.currentText()
+    
+    # Check if first column is not "None"
+        if first_column != "None":
+            selected_columns.append(first_column)
+            ascending_orders.append(first_order == "Ascending")
 
-            
+    # Get values from the second sorting level
+        second_column = self.columnComboBox2.currentText()
+        second_order = self.sortOrderComboBox2.currentText()
+    
+    # Check if second column is not "None"
+        if second_column != "None":
+            selected_columns.append(second_column)
+            ascending_orders.append(second_order == "Ascending")
 
-            end_time = time.time()
-            sorting_time = end_time - start_time
-            self.sorting_time_label.setText(f"Sorting Time: {sorting_time:.2f} seconds")
-            self.populate_table(sorted_df)
+    # Ensure both lists have the same length
+        if len(selected_columns) != len(ascending_orders):
+            print("Mismatched lengths between selected columns and ascending orders")
+            return  # Exit the function if there's a mismatch
+
+    # Proceed to sort the DataFrame
+        sorted_df = self.df.sort_values(by=selected_columns, ascending=ascending_orders)
+        self.df = sorted_df  # Update the DataFrame
+        self.update_table_from_df()  # Implement this method to refresh the table with the sorted data
+
+    
 
     def reset_data(self):
         self.populate_table(self.df)
-        self.searchLineEdit.clear()
-        self.columnComboBox.setCurrentIndex(0)
-        self.algorithmComboBox.setCurrentIndex(0)
-
+        self.searchLineEdit1.clear()
+        self.searchLineEdit2.clear()
+        self.columnComboBox1.setCurrentIndex(0)
+        self.algorithmComboBox1.setCurrentIndex(0)
+    
     def populate_table(self, df):
-        self.tableWidget.setRowCount(df.shape[0])
-        self.tableWidget.setColumnCount(df.shape[1])
-        self.tableWidget.setHorizontalHeaderLabels(list(df.columns))
+        self.tableWidget.setRowCount(0)
+        for index, row in df.iterrows():
+            row_position = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(row_position)
+            for column_index, value in enumerate(row):
+                self.tableWidget.setItem(row_position, column_index, QTableWidgetItem(str(value)))
 
-        for row in range(df.shape[0]):
-            for column in range(df.shape[1]):
-                self.tableWidget.setItem(row, column, QTableWidgetItem(str(df.iat[row, column])))
-
-    # Sorting algorithms (insertion_sort, selection_sort, etc.) remain the same
-
-    # def insertion_sort(self, df, column):
-    #     sorted_df = df.copy()
-    #     for i in range(1, len(sorted_df)):
-    #         key = sorted_df.iloc[i]
-    #         j = i - 1
-    #         while j >= 0 and key[column] < sorted_df.iloc[j][column]:
-    #             sorted_df.iloc[j + 1] = sorted_df.iloc[j]
-    #             j -= 1
-    #         sorted_df.iloc[j + 1] = key
-    #     return sorted_df
     def insertion_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
         for i in range(1, len(sorted_df)):
@@ -411,16 +494,6 @@ class MergedApp(QMainWindow):
         return sorted_df
 
 
-
-    # def selection_sort(self, df, column):
-    #     sorted_df = df.copy()
-    #     for i in range(len(sorted_df)):
-    #         min_idx = i
-    #         for j in range(i + 1, len(sorted_df)):
-    #             if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
-    #                 min_idx = j
-    #         sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
-    #     return sorted_df
     def selection_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
         for i in range(len(sorted_df)):
@@ -444,31 +517,6 @@ class MergedApp(QMainWindow):
 
         return sorted_df
 
-    # def bubble_sort(self, df, column):
-    #     sorted_df = df.copy()
-    #     n = len(sorted_df)
-    #     for i in range(n):
-    #         isSwapped = False
-    #         for j in range(0, n-i-1):
-    #             if sorted_df[column].iloc[j] > sorted_df[column].iloc[j + 1]:
-    #                 sorted_df.iloc[j], sorted_df.iloc[j + 1] = sorted_df.iloc[j + 1], sorted_df.iloc[j]
-    #                 isSwapped = True
-    #         if not isSwapped:
-    #             break
-    #     return sorted_df
-
-    # def bubble_sort(self, df, column):
-    #     sorted_df = df.copy()
-    #     n = len(sorted_df)
-    #     for i in range(1,n):
-    #         isSwapped = False
-    #         for j in range(0,n-i):
-    #             if sorted_df[column].iloc[j] > sorted_df[column].iloc[j+1]:
-    #                 sorted_df.iloc[j], sorted_df.iloc[j+1] = sorted_df.iloc[j+1], sorted_df.iloc[j]
-    #                 isSwapped = True
-    #         if not isSwapped:
-    #             break
-    #     return sorted_df
     def bubble_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
         n = len(sorted_df)
@@ -498,16 +546,7 @@ class MergedApp(QMainWindow):
 
         return sorted_df
 
-    # def quick_sort(self, df, column):
-    #     # Implement Quick Sort
-    #     sorted_df = df.copy()
-    #     if len(sorted_df) <= 1:
-    #         return sorted_df
-    #     pivot = sorted_df[column].iloc[len(sorted_df) // 2]
-    #     left = sorted_df[sorted_df[column] < pivot]
-    #     middle = sorted_df[sorted_df[column] == pivot]
-    #     right = sorted_df[sorted_df[column] > pivot]
-    #     return pd.concat([self.quick_sort(left, column), middle, self.quick_sort(right, column)])
+
     def quick_sort(self, df, column):
         sorted_df = df.copy()
         if len(sorted_df) <= 1:
@@ -606,22 +645,6 @@ class MergedApp(QMainWindow):
             sorted_df.iloc[i] = output[i]
         return sorted_df
 
-    # def counting_sort(self, df, column):
-    #     # Implement Counting Sort
-    #     sorted_df = df.copy()
-    #     max_val = sorted_df[column].max()
-    #     count = [0] * (max_val + 1)
-
-    #     for value in sorted_df[column]:
-    #         count[value] += 1
-
-    #     index = 0
-    #     for i in range(max_val + 1):
-    #         while count[i] > 0:
-    #             sorted_df.iloc[index] = i
-    #             index += 1
-    #             count[i] -= 1
-    #     return sorted_df
 
     def counting_sort(self, df, column):
         column_dtype = df[column].dtype
@@ -715,6 +738,29 @@ class MergedApp(QMainWindow):
 
         return sorted_df
 
+        # Adding Searching Algos
+
+        def binary_search(self, df, column, value):
+            sorted_df=df.copy()
+            start = 0
+            end=len(sorted_df)-1
+            mid=0
+            while start<=end:
+                mid=(start+end)//2
+                if sorted_df[column].iloc[mid]==value:
+                    return mid
+                elif sorted_df[column].iloc[mid]<value:
+                    start=mid+1
+                else:
+                    end=mid-1
+            return -1
+
+        def linear_search(self, df, column, value):
+            sorted_df=df.copy()
+            for i in range(len(sorted_df)):
+                if sorted_df[column].iloc[i]==value:
+                    return i
+            return -1
 
 
 def main():
