@@ -1,5 +1,6 @@
 import sys
 import os
+import numpy as np
 # print("Current working directory: ", os.getcwd())
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -18,7 +19,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-
 class ScraperThread(QThread):
     progress_updated = pyqtSignal(int)
     data_updated = pyqtSignal(dict) 
@@ -425,6 +425,17 @@ class MergedApp(QMainWindow):
     # Populate the table with the final search result
         self.populate_table(filtered_df)
 
+    # price convertor function
+    def convert_price(self, price):
+        if isinstance(price, str):
+            # Price format is PKR 78.5lacs or PKR 1.8crore
+            if "lac" in price:
+                price = price.replace("PKR", "").replace("lacs", "").strip()
+                price = float(price) * 100000
+            elif "crore" in price:
+                price = price.replace("PKR", "").replace("crore", "").strip()
+                price = float(price) * 10000000 
+        return price
     
     def sort_data(self):
         selected_columns = []
@@ -432,7 +443,7 @@ class MergedApp(QMainWindow):
     # Get values from the first sorting level
         first_column = self.columnComboBox1.currentText()
         second_column = self.columnComboBox2.currentText()
-    
+
         if first_column:
             selected_columns.append(first_column)
         
@@ -444,8 +455,13 @@ class MergedApp(QMainWindow):
 
         start_time = time.time()
         selected_algorithm = self.algorithmComboBox1.currentText()
-    
-    # Sort the DataFrame first by the first column
+        # convert the data of Model Year column data to int
+        # check if the selected column is Price
+        
+            
+            
+        
+        # Sort the DataFrame first by the first column
         if selected_algorithm == "Insertion Sort":
             sorted_df = self.insertion_sort(self.df, first_column)
         elif selected_algorithm == "Selection Sort":
@@ -515,6 +531,11 @@ class MergedApp(QMainWindow):
         self.columnComboBox1.setCurrentIndex(0)
         self.columnComboBox2.setCurrentIndex(0)
         self.algorithmComboBox1.setCurrentIndex(0)
+        self.sorting_time_label.setText("Sorting Time: 0.0 seconds")
+        # Reset table data
+        # self.df = pd.read_csv('check.csv')
+        self.update_table_from_df()
+        
     
     def populate_table(self, df):
         self.tableWidget.setRowCount(0)
@@ -526,56 +547,38 @@ class MergedApp(QMainWindow):
 
     def insertion_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+
         for i in range(1, len(sorted_df)):
-            key = sorted_df.iloc[i]
+            key = sorted_df.iloc[i]  # Get the current row as the key
             j = i - 1
 
-        # Compare key with the previous elements
-            while j >= 0:
-            # Ensure comparison is valid (both should be of the same type)
-                if isinstance(key[column], str) and isinstance(sorted_df.iloc[j][column], str):
-                    if key[column] < sorted_df.iloc[j][column]:
-                        sorted_df.iloc[j + 1] = sorted_df.iloc[j]
-                    else:
-                        break  # Stop if the order is correct
-                elif isinstance(key[column], (int, float)) and isinstance(sorted_df.iloc[j][column], (int, float)):
-                    if key[column] < sorted_df.iloc[j][column]:
-                        sorted_df.iloc[j + 1] = sorted_df.iloc[j]
-                    else:
-                        break  # Stop if the order is correct
-                else:
-                # If types are mixed, we can define a strategy (e.g., place strings after numbers)
-                    if isinstance(key[column], str):
-                        break  # Stop since we consider strings after numbers
+            # Move elements that are greater than key[column] one position ahead
+            while j >= 0 and sorted_df.iloc[j][column] > key[column]:
+                sorted_df.iloc[j + 1] = sorted_df.iloc[j]  # Shift row j to j+1
                 j -= 1
 
-            sorted_df.iloc[j + 1] = key  # Place the key in the correct position
-        return sorted_df
+            sorted_df.iloc[j + 1] = key  # Insert the key row at its correct position
 
+        return sorted_df
 
     def selection_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
+
         for i in range(len(sorted_df)):
             min_idx = i
-            for j in range(i + 1, len(sorted_df)):
-            # Ensure valid comparisons based on types
-                if isinstance(sorted_df[column].iloc[j], str) and isinstance(sorted_df[column].iloc[min_idx], str):
-                    if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
-                        min_idx = j
-                elif isinstance(sorted_df[column].iloc[j], (int, float)) and isinstance(sorted_df[column].iloc[min_idx], (int, float)):
-                    if sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
-                        min_idx = j
-                elif isinstance(sorted_df[column].iloc[j], str):
-                # If min_idx is a number, and j is a string, keep min_idx
-                    continue  # Strings are treated as larger than numbers
-                elif isinstance(sorted_df[column].iloc[min_idx], str):
-                    min_idx = j  # If the current min_idx is a string, replace it with a number if found
 
-        # Swap the found minimum element with the first element
-            sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx], sorted_df.iloc[i]
+            for j in range(i + 1, len(sorted_df)):
+                # Compare elements regardless of their type
+                if pd.isna(sorted_df[column].iloc[j]):
+                    continue  # Skip NaN values
+                if pd.isna(sorted_df[column].iloc[min_idx]) or sorted_df[column].iloc[j] < sorted_df[column].iloc[min_idx]:
+                    min_idx = j
+
+            # Swap the found minimum element with the first element
+            sorted_df.iloc[i], sorted_df.iloc[min_idx] = sorted_df.iloc[min_idx].copy(), sorted_df.iloc[i].copy()
 
         return sorted_df
-
+    
     def bubble_sort(self, df, column):
         sorted_df = df.copy()  # Create a copy to avoid modifying the original DataFrame
         n = len(sorted_df)
@@ -604,7 +607,6 @@ class MergedApp(QMainWindow):
                 break  # No swaps mean the array is sorted
 
         return sorted_df
-
 
     def quick_sort(self, df, column):
         sorted_df = df.copy()
@@ -655,7 +657,6 @@ class MergedApp(QMainWindow):
             
         return result
 
-    
     def bucket_sort(self, df, column):
         # Implement Bucket Sort
         sorted_df = df.copy()
@@ -704,33 +705,40 @@ class MergedApp(QMainWindow):
             sorted_df.iloc[i] = output[i]
         return sorted_df
 
-
     def counting_sort(self, df, column):
         column_dtype = df[column].dtype
 
         if pd.api.types.is_numeric_dtype(column_dtype):
             sorted_df = df.copy()
-            max_val = sorted_df[column].max()
-            count = [0] * (max_val + 1)
-            for value in sorted_df[column]:
-                count[value] += 1
+            values = sorted_df[column].astype(int)
+            max_val = values.max()
+            min_val = values.min()
+            range_val = max_val - min_val + 1
 
-            index = 0
-            for i in range(max_val + 1):
-                while count[i] > 0:
-                    sorted_df.iloc[index] = i
-                    index += 1
-                    count[i] -= 1
-            return sorted_df
+            # Create count array
+            count = np.zeros(range_val, dtype=int)
+            np.add.at(count, values - min_val, 1)
+
+            # Create cumulative count
+            count = np.cumsum(count)
+
+            # Create output array
+            output = np.zeros(len(df), dtype=int)
+            for i in range(len(df) - 1, -1, -1):
+                count_idx = values.iloc[i] - min_val
+                output_idx = count[count_idx] - 1
+                output[output_idx] = i
+                count[count_idx] -= 1
+
+            # Use the output array to reorder the DataFrame
+            return sorted_df.iloc[output].reset_index(drop=True)
 
         elif pd.api.types.is_string_dtype(column_dtype):
-            sorted_df=df.copy()
-            sorted_df=sorted_df.sort_values(by=column).reset_index(drop=True)
-            return sorted_df
+            return df.sort_values(by=column).reset_index(drop=True)
 
         else:
             return df
-
+         
     def shell_sort(self, df, column):
         sorted_df = df.copy()
         n = len(sorted_df)
@@ -752,28 +760,60 @@ class MergedApp(QMainWindow):
 
     def pigeonhole_sort(self, df, column):
         sorted_df = df.copy()
-    
-    # Step 1: Find the range of the values
-        min_value = sorted_df[column].min()
-        max_value = sorted_df[column].max()
-    
-    # Step 2: Create pigeonholes
-        size = max_value - min_value + 1
-        holes = [[] for _ in range(size)]
+        column_dtype = sorted_df[column].dtype
 
-    # Step 3: Place each element in its corresponding pigeonhole
-        for value in sorted_df[column]:
-            holes[value - min_value].append(value)
+        if pd.api.types.is_numeric_dtype(column_dtype):
+            # Numeric sorting
+            min_value = sorted_df[column].min()
+            max_value = sorted_df[column].max()
+        
+            # Handle floating-point numbers by scaling
+            if np.issubdtype(column_dtype, np.floating):
+                scale_factor = 10 ** (int(np.log10(max_value - min_value)) + 1)
+                sorted_df[column] = (sorted_df[column] * scale_factor).astype(int)
+                min_value = sorted_df[column].min()
+                max_value = sorted_df[column].max()
 
-    # Step 4: Flatten the holes into the sorted order
-        sorted_index = 0
-        for hole in holes:
-            for value in hole:
-                sorted_df.iloc[sorted_index] = value
-                sorted_index += 1
+            size = max_value - min_value + 1
+            holes = [[] for _ in range(size)]
+
+            # Place each row index in its corresponding pigeonhole
+            for idx, value in enumerate(sorted_df[column]):
+                holes[int(value) - min_value].append(idx)
+
+            # Flatten the holes to get the sorted order of indices
+            sorted_indices = [idx for hole in holes for idx in hole]
+
+            # Use the sorted indices to reorder the DataFrame
+            sorted_df = sorted_df.iloc[sorted_indices].reset_index(drop=True)
+
+            # If we scaled floating-point numbers, rescale them back
+            if np.issubdtype(column_dtype, np.floating):
+                sorted_df[column] = sorted_df[column].astype(float) / scale_factor
+
+        elif pd.api.types.is_string_dtype(column_dtype):
+            # String sorting
+            unique_values = sorted(sorted_df[column].unique())
+            value_to_index = {val: idx for idx, val in enumerate(unique_values)}
+
+            size = len(unique_values)
+            holes = [[] for _ in range(size)]
+
+            # Place each row index in its corresponding pigeonhole
+            for idx, value in enumerate(sorted_df[column]):
+                holes[value_to_index[value]].append(idx)
+
+            # Flatten the holes to get the sorted order of indices
+            sorted_indices = [idx for hole in holes for idx in hole]
+
+            # Use the sorted indices to reorder the DataFrame
+            sorted_df = sorted_df.iloc[sorted_indices].reset_index(drop=True)
+
+        else:
+            print(f"Unsupported data type: {column_dtype}")
+
+        return sorted_df   
     
-        return sorted_df
-
     def comb_sort(self, df, column):
         sorted_df = df.copy()
         n = len(sorted_df)
@@ -799,7 +839,7 @@ class MergedApp(QMainWindow):
 
         # Adding Searching Algos
 
-        def binary_search(self, df, column, value):
+    def binary_search(self, df, column, value):
             sorted_df=df.copy()
             start = 0
             end=len(sorted_df)-1
@@ -814,7 +854,7 @@ class MergedApp(QMainWindow):
                     end=mid-1
             return -1
 
-        def linear_search(self, df, column, value):
+    def linear_search(self, df, column, value):
             sorted_df=df.copy()
             for i in range(len(sorted_df)):
                 if sorted_df[column].iloc[i]==value:
